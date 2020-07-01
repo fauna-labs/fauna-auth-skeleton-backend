@@ -4,6 +4,7 @@ import express from 'express'
 import faunadb from 'faunadb'
 
 import { HandleLoginError, HandleRegisterError } from './api-errors'
+import { refreshTokenUsed } from '../../fauna-queries/helpers/errors'
 
 const q = faunadb.query
 const { Call } = q
@@ -72,7 +73,14 @@ router.post('/accounts/refresh', cors(corsOptions), function(req, res, next) {
     return client
       .query(Call(q.Function('refresh_token')))
       .then(faunaRes => {
-        return res.json({ secret: faunaRes.access.secret, account: faunaRes.account })
+        if (faunaRes.error && faunaRes.error === refreshTokenUsed) {
+          req.session.refreshToken = null
+          req.session.destroy()
+          return res.status(400).send(refreshTokenUsed)
+        } else {
+          req.session.refreshToken = faunaRes.refresh.secret
+          return res.json({ secret: faunaRes.access.secret, account: faunaRes.account })
+        }
       })
       .catch(err => {
         console.log(err)
