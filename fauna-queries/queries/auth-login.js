@@ -1,5 +1,6 @@
 import faunadb from 'faunadb'
 import { CreateAccessAndRefreshToken } from './auth-tokens'
+import { VerifyUserLocked } from './auth-refresh'
 
 const q = faunadb.query
 const {
@@ -24,6 +25,27 @@ const {
 /* We can write our own custom login function by using 'Identify()' in combination with 'Create(Tokens(), ...)' instead of 'Login()'
  * which is useful if you want to write custom login behaviour.
  */
+
+const failedResult = {
+  access: false,
+  refresh: false,
+  account: false
+}
+
+function VerifyAndLogin(email, password) {
+  return If(
+    // First check whether the account exists
+    Exists(Match(Index('accounts_by_email'), email)),
+    Let(
+      {
+        accountRef: Select([0], Paginate(Match(Index('accounts_by_email'), email)))
+      },
+      If(VerifyUserLocked(Var('accountRef')), failedResult, LoginAccount(email, password))
+    ),
+    failedResult
+  )
+}
+
 function LoginAccount(email, password) {
   return If(
     // First check whether the account exists
@@ -47,11 +69,7 @@ function LoginAccount(email, password) {
       }
     ),
     // just return false for each in case the account doesn't exist.
-    {
-      access: false,
-      refresh: false,
-      account: false
-    }
+    failedResult
   )
 }
 
@@ -102,4 +120,4 @@ function DeleteAllAndCount(pageOfTokens) {
   return Count(q.Map(pageOfTokens, Lambda(['tokenRef'], Delete(Var('tokenRef')))))
 }
 
-export { LoginAccount, LogoutAllSessions, LogoutCurrentSession }
+export { VerifyAndLogin, LogoutAllSessions, LogoutCurrentSession }

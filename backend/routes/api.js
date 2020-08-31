@@ -76,15 +76,15 @@ router.post('/accounts/refresh', cors(corsOptions), function(req, res, next) {
         if (faunaRes.error && faunaRes.error === refreshTokenUsed) {
           req.session.refreshToken = null
           req.session.destroy()
-          return res.status(400).send(refreshTokenUsed)
+          return res.status(200).send({ error: refreshTokenUsed })
         } else {
           req.session.refreshToken = faunaRes.refresh.secret
           return res.json({ secret: faunaRes.access.secret, account: faunaRes.account })
         }
       })
       .catch(err => {
-        console.log(err)
-        return res.json({ error: 'unauthorized' })
+        console.error('Error refreshing', err)
+        return res.json({ error: 'could not refresh' })
       })
   } else {
     console.log('INFO - Session - there is no session active, cant refresh')

@@ -1,10 +1,11 @@
 import { CreateOrUpdateRole } from './../helpers/fql'
+import { VerifyUserLocked } from '../queries/auth-refresh'
 const faunadb = require('faunadb')
 // Use the excellent community-driven library by Eigil
 // Since everything is just functions, this is how easy it is to extend FQL
 
 const q = faunadb.query
-const { Collection, Index, Tokens, Query, Lambda, Not, Equals, Select, Get, Var } = q
+const { Collection, Index, Tokens, Query, Lambda, Not, Equals, Select, Get, Var, And } = q
 
 /* The backend will be responsible for the auth flow. We could give it a server key
  * but here we show that we can be far more protective and only give the backend access
@@ -73,6 +74,14 @@ const CreateFnRoleLogin = CreateOrUpdateRole({
     {
       resource: Tokens(),
       actions: { create: true }
+    },
+    {
+      resource: Collection('accounts_locked'),
+      actions: { read: true, create: true }
+    },
+    {
+      resource: Index('accounts_locked_by_account'),
+      actions: { read: true }
     }
   ]
 })
@@ -99,7 +108,11 @@ const CreateFnRoleRegister = CreateOrUpdateRole({
  */
 const CreateLoggedInRole = CreateOrUpdateRole({
   name: 'membershiprole_loggedin',
-  membership: [{ resource: Collection('accounts') }],
+  membership: [
+    {
+      resource: Collection('accounts')
+    }
+  ],
   privileges: [
     {
       resource: Collection('dinos'),
@@ -208,6 +221,14 @@ const CreateFnRoleRefreshTokens = CreateOrUpdateRole({
     },
     {
       resource: Index('account_sessions_by_account'),
+      actions: { read: true }
+    },
+    {
+      resource: Collection('accounts_locked'),
+      actions: { read: true, create: true }
+    },
+    {
+      resource: Index('accounts_locked_by_account'),
       actions: { read: true }
     }
   ]

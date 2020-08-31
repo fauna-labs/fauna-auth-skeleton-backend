@@ -30,7 +30,9 @@ class QueryManager {
         }
         return res
       })
-      .catch(err => console.log('error calling frontend - login', err))
+      .catch(err => {
+        console.log('error calling frontend - login', err)
+      })
   }
 
   // Calling the register endpoint which will run the register
@@ -76,16 +78,11 @@ class QueryManager {
   refresh() {
     return this.postData(urljoin(process.env.REACT_APP_LOCAL___API, 'api', 'accounts/refresh'), {})
       .then(res => {
-        if (res) {
-          if (res.error) {
-            console.log(res.error)
-            return false
-          } else {
-            this.client = new faunadb.Client({ secret: res.secret })
-            return res.account
-          }
+        if (res && res.error) {
+          return res
         } else {
-          return null
+          this.client = new faunadb.Client({ secret: res.secret })
+          return res.account
         }
       })
       .catch(err => console.log('error calling frontend - refresh', err))

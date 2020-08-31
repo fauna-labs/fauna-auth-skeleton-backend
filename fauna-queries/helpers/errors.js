@@ -26,6 +26,7 @@ const safeVerifyError = (error, keys) => {
   return error
 }
 
-const refreshTokenUsed = 'refresh_token_used'
+const refreshTokenUsed = 'Refresh token invalid'
+const userLocked = 'User is locked'
 
-export { handleSetupError, safeVerifyError, refreshTokenUsed }
+export { handleSetupError, safeVerifyError, refreshTokenUsed, userLocked }

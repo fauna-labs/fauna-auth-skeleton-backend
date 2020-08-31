@@ -71,6 +71,20 @@ const CreateIndexTokensByInstance = CreateIndex({
   serialized: true
 })
 
+const CreateAccountsLockedCollection = CreateCollection({ name: 'accounts_locked' })
+
+const CreateIndexAccountsLockedByAccount = CreateIndex({
+  name: 'accounts_locked_by_account',
+  source: Collection('accounts_locked'),
+  terms: [
+    {
+      field: ['data', 'account']
+    }
+  ],
+  unique: true,
+  serialized: true
+})
+
 async function createAccountCollection(client) {
   const accountsRes = await client.query(IfNotExists(Collection('accounts'), CreateAccountsCollection))
   await client.query(IfNotExists(Collection('account_sessions'), CreateAccountsSessionRefreshCollection))
@@ -79,6 +93,9 @@ async function createAccountCollection(client) {
   await client.query(IfNotExists(Index('access_tokens_by_session'), CreateIndexAccessTokensByRefreshTokens))
   await client.query(IfNotExists(Index('account_sessions_by_account'), CreateIndexSessionByAccount))
   await client.query(IfNotExists(Index('tokens_by_instance'), CreateIndexTokensByInstance))
+  await client.query(IfNotExists(Collection('accounts_locked'), CreateAccountsLockedCollection))
+  await client.query(IfNotExists(Index('accounts_locked_by_account'), CreateIndexAccountsLockedByAccount))
+
   return accountsRes
 }
 
@@ -90,6 +107,8 @@ async function deleteAccountsCollection(client) {
   await client.query(DeleteIfExists(Index('access_tokens_by_session')))
   await client.query(DeleteIfExists(Index('account_sessions_by_account')))
   await client.query(DeleteIfExists(Index('tokens_by_instance')))
+  await client.query(DeleteIfExists(Index('accounts_locked')))
+  await client.query(DeleteIfExists(Index('accounts_locked_by_account')))
 }
 
 const PopulateAccounts = Do(

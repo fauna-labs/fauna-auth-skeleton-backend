@@ -1,10 +1,31 @@
 import faunadb from 'faunadb'
 import { CreateAccessAndRefreshToken } from './auth-tokens'
-import { refreshTokenUsed } from '../helpers/errors'
+import { refreshTokenUsed, userLocked } from '../helpers/errors'
 import { LogoutAllSessions } from './auth-login'
 
 const q = faunadb.query
-const { Let, Get, Var, Select, Identity, ToTime, Divide, TimeDiff, Now, And, Do, GTE, If, Update } = q
+const {
+  Let,
+  Get,
+  Var,
+  Select,
+  Identity,
+  ToTime,
+  Divide,
+  TimeDiff,
+  Now,
+  And,
+  Do,
+  GTE,
+  If,
+  Update,
+  Create,
+  Collection,
+  Exists,
+  Match,
+  Index,
+  Abort
+} = q
 
 /** ~~~~~ RefreshToken ~~~
  * How is it executed?
@@ -23,6 +44,16 @@ const { Let, Get, Var, Select, Identity, ToTime, Divide, TimeDiff, Now, And, Do,
  *  4. Create a new refresh token (essentially we do refresh token rotation)
  *  5. Return both the access and refresh token.
  */
+
+function VerifyAndRefresh() {
+  return Let(
+    {
+      session: Get(Identity()),
+      accountRef: Select(['data', 'account'], Var('session'))
+    },
+    If(VerifyUserLocked(Var('accountRef')), Abort(userLocked), RefreshToken())
+  )
+}
 
 function RefreshToken() {
   return Let(
@@ -43,7 +74,7 @@ function RefreshToken() {
       And(Var('used'), GTE(Var('age_in_ms'), 10000)),
       // Triggering an Abort stops further execution, we don't want that since our tokens
       // will also not be invalidated, we'll return an error.
-      Do(LogoutAllSessions(), { error: refreshTokenUsed }),
+      Do(LogoutAllSessions(), LockUser(Identity()), { error: refreshTokenUsed }),
       // The return value of Do is the last value.
       Let(
         {
@@ -108,4 +139,33 @@ function RotateAccessAndRefreshToken(account) {
   )
 }
 
-export { RefreshToken }
+// Blocking the account is done by creating a separate document on another collection users_locked.
+// That way there is less change to give people accidental access to this doc which would allow them
+// to unlock themselves (or lock themselves..), in other words:
+// less complex roles to write, less chance for mistakes.
+function LockUser(sessionRef) {
+  return Let(
+    {
+      session: Get(sessionRef),
+      accountRef: Select(['data', 'account'], Var('session'))
+    },
+    Create(Collection('accounts_locked'), {
+      data: {
+        account: Var('accountRef')
+      }
+    })
+  )
+}
+
+// Finally, the function we will plug in in the login and refresh functionality to verify that a user is not locked
+// already.
+function VerifyUserLocked(accountRef) {
+  return Let(
+    {
+      locked: Exists(Match(Index('accounts_locked_by_account'), accountRef))
+    },
+    Var('locked')
+  )
+}
+
+export { VerifyAndRefresh, VerifyUserLocked }

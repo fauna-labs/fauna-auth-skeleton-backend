@@ -11,12 +11,13 @@ import Form from '../components/form'
 const handleLogin = (event, username, password, history, sessionContext) => {
   faunaQueries
     .login(username, password)
-    .then(account => {
-      if (account === false) {
+    .then(res => {
+      console.log(res)
+      if (res === false) {
         toast.error('Login failed')
       } else {
         toast.success('Login successful')
-        sessionContext.dispatch({ type: 'login', data: account })
+        sessionContext.dispatch({ type: 'login', data: res })
         history.push('/')
       }
     })

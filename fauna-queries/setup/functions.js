@@ -1,8 +1,8 @@
-import { LoginAccount, LogoutAllSessions, LogoutCurrentSession } from './../queries/auth-login'
+import { LogoutAllSessions, LogoutCurrentSession, VerifyAndLogin } from './../queries/auth-login'
 import { RegisterAccount } from './../queries/auth-register'
 
 import { CreateOrUpdateFunction } from './../helpers/fql'
-import { RefreshToken } from '../queries/auth-refresh'
+import { VerifyAndRefresh } from '../queries/auth-refresh'
 
 const faunadb = require('faunadb')
 const q = faunadb.query
@@ -16,13 +16,13 @@ const RegisterUDF = CreateOrUpdateFunction({
 
 const LoginUDF = CreateOrUpdateFunction({
   name: 'login',
-  body: Query(Lambda(['email', 'password'], LoginAccount(Var('email'), Var('password')))),
+  body: Query(Lambda(['email', 'password'], VerifyAndLogin(Var('email'), Var('password')))),
   role: Role('functionrole_login')
 })
 
 const RefreshTokenUDF = CreateOrUpdateFunction({
   name: 'refresh_token',
-  body: Query(Lambda([], RefreshToken())),
+  body: Query(Lambda([], VerifyAndRefresh())),
   role: Role('functionrole_refresh_tokens_logout')
 })
 

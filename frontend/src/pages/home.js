@@ -21,9 +21,12 @@ const Home = () => {
       setLoading(true)
       faunaQueries
         .refresh()
-        .then(data => {
-          if (data) {
-            sessionContext.dispatch({ type: 'login', data: data })
+        .then(res => {
+          if (res && res.error) {
+            toast.error(res.error)
+            setLoading(false)
+          } else if (res) {
+            sessionContext.dispatch({ type: 'login', data: res })
             setLoading(false)
           } else {
             return getDinos(user, setLoading, setDinos, sessionContext)
@@ -58,6 +61,7 @@ const Home = () => {
 }
 
 async function getDinos(user, setLoading, setDinos, sessionContext) {
+  setLoading(true)
   return faunaQueries
     .getDinos()
     .then(res => {
