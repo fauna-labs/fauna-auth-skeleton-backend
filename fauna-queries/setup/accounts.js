@@ -2,21 +2,7 @@ import { DeleteIfExists, IfNotExists } from './../helpers/fql'
 
 const faunadb = require('faunadb')
 const q = faunadb.query
-const {
-  Do,
-  Create,
-  Documents,
-  CreateCollection,
-  CreateIndex,
-  Collection,
-  Exists,
-  If,
-  Index,
-  Delete,
-  Lambda,
-  Paginate,
-  Var
-} = q
+const { Do, Create, CreateCollection, CreateIndex, Collection, Index, Tokens } = q
 
 /* Collection */
 
@@ -47,24 +33,64 @@ const CreateIndexAccountsByEmail = CreateIndex({
   serialized: true
 })
 
+const CreateAccountsSessionRefreshCollection = CreateCollection({ name: 'account_sessions' })
+
+const CreateIndexAccessTokensByRefreshTokens = CreateIndex({
+  name: 'access_tokens_by_session',
+  source: Tokens(),
+  terms: [
+    {
+      field: ['data', 'session']
+    }
+  ],
+  unique: false,
+  serialized: true
+})
+
+const CreateIndexSessionByAccount = CreateIndex({
+  name: 'account_sessions_by_account',
+  source: Collection('account_sessions'),
+  terms: [
+    {
+      field: ['data', 'account']
+    }
+  ],
+  unique: false,
+  serialized: true
+})
+
+const CreateIndexTokensByInstance = CreateIndex({
+  name: 'tokens_by_instance',
+  source: Tokens(),
+  terms: [
+    {
+      field: ['instance']
+    }
+  ],
+  unique: false,
+  serialized: true
+})
+
 async function createAccountCollection(client) {
   const accountsRes = await client.query(IfNotExists(Collection('accounts'), CreateAccountsCollection))
+  await client.query(IfNotExists(Collection('account_sessions'), CreateAccountsSessionRefreshCollection))
   await client.query(IfNotExists(Index('accounts_by_email'), CreateIndexAccountsByEmail))
   await client.query(IfNotExists(Index('all_accounts'), CreateIndexAllAccounts))
+  await client.query(IfNotExists(Index('access_tokens_by_session'), CreateIndexAccessTokensByRefreshTokens))
+  await client.query(IfNotExists(Index('account_sessions_by_account'), CreateIndexSessionByAccount))
+  await client.query(IfNotExists(Index('tokens_by_instance'), CreateIndexTokensByInstance))
   return accountsRes
 }
 
 async function deleteAccountsCollection(client) {
   await client.query(DeleteIfExists(Collection('accounts')))
+  await client.query(DeleteIfExists(Collection('account_sessions')))
   await client.query(DeleteIfExists(Index('accounts_by_email')))
   await client.query(DeleteIfExists(Index('all_accounts')))
+  await client.query(DeleteIfExists(Index('access_tokens_by_session')))
+  await client.query(DeleteIfExists(Index('account_sessions_by_account')))
+  await client.query(DeleteIfExists(Index('tokens_by_instance')))
 }
-
-const DeleteAllAccounts = If(
-  Exists(Collection('accounts')),
-  q.Map(Paginate(Documents(Collection('accounts'))), Lambda('ref', Delete(Var('ref')))),
-  true
-)
 
 const PopulateAccounts = Do(
   Create(Collection('accounts'), {
@@ -87,4 +113,4 @@ const PopulateAccounts = Do(
   })
 )
 
-export { createAccountCollection, deleteAccountsCollection, PopulateAccounts, DeleteAllAccounts }
+export { createAccountCollection, deleteAccountsCollection, PopulateAccounts }

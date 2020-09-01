@@ -1,32 +1,105 @@
 import faunadb from 'faunadb'
+import { CreateAccessAndRefreshToken } from './auth-tokens'
 
 const q = faunadb.query
-const { Logout, Login, Match, Index, TimeAdd, Now, Var, Get, Let, Select } = q
+const {
+  Match,
+  Index,
+  Var,
+  Get,
+  Let,
+  Select,
+  Paginate,
+  Identify,
+  If,
+  Identity,
+  Logout,
+  Lambda,
+  Delete,
+  Count,
+  Union,
+  Exists
+} = q
 
-/* LoginAccount
-   We can login by searching for the account with the accounts_by_email account which returns references.
-   If we assume that this will only return one account reference (which is the case, there is a uniqueness on that index)
-   then we can call Login directly on that match. Login expects a reference, and an object that 
-   specifies a password, which is the second parameter we pass along. The object also optionally specifies a 'ttl'
-   which we will set to make sure our tokens dissapear after the given time. Having tokens that stay forever
-   is a bad idea of course. 
+/* We can write our own custom login function by using 'Identify()' in combination with 'Create(Tokens(), ...)' instead of 'Login()'
+ * which is useful if you want to write custom login behaviour.
  */
 function LoginAccount(email, password) {
-  return Let(
+  return If(
+    // First check whether the account exists
+    Exists(Match(Index('accounts_by_email'), email)),
+    // If not, we can skip all below.
+    Let(
+      {
+        accountRef: Select([0], Paginate(Match(Index('accounts_by_email'), email))),
+        account: Get(Var('accountRef')),
+        // First we verify whether our login credentials are correct without retrieving a token using Identify.
+        authenticated: Identify(Var('accountRef'), password),
+        // Then we make a token manually in case authentication succeeded. By default the Login function
+        // would provide an instance, but it would not add data to the token. Here we will use it to
+        // differentiate between a refresh and an access token.
+        tokens: If(Var('authenticated'), CreateAccessAndRefreshToken(Var('accountRef')), false)
+      },
+      {
+        access: Select(['access'], Var('tokens'), false),
+        refresh: Select(['refresh'], Var('tokens'), false),
+        account: If(Var('authenticated'), Var('account'), false) // Do not give information about existance of the account
+      }
+    ),
+    // just return false for each in case the account doesn't exist.
     {
-      accountRef: Match(Index('accounts_by_email'), email),
-      token: Login(Var('accountRef'), { password: password, ttl: TimeAdd(Now(), 3, 'hour') }),
-      account: Get(Var('accountRef'))
-    },
-    { account: Var('account'), secret: Select(['secret'], Var('token')) }
+      access: false,
+      refresh: false,
+      account: false
+    }
   )
 }
-/* LogoutAccount
-   logging out is simple, we know already (via the token) who is connected. 
-   logout will invalidate that token. Setting true would invalidate all tokens related to that account.
-   setting it to false only invalidates the token currently used in the client */
-function LogoutAccount() {
-  return Logout(false)
+
+function LogoutCurrentSession() {
+  return Let(
+    {
+      // Get the session (this function is called from the backend using the refresh token)
+      sessionRef: Identity(),
+      accessTokens: Match(Index('access_tokens_by_session'), Var('sessionRef'))
+    },
+    {
+      // we can return the results to see whether it worked
+      // logout should return true or false on false.
+      sessionLoggedOut: Logout(false), // this logs out the session token
+      // while when we delete something with 'Delete' it would return the deleted object on success.
+      // we'll modify that and just return a count of how many tokens that were deleted.
+      accountLoggedOut: DeleteAllAndCount(Select(['data'], Paginate(Var('accessTokens'), { size: 100000 })))
+    }
+  )
 }
 
-export { LoginAccount, LogoutAccount }
+function LogoutAllSessions() {
+  return Let(
+    {
+      // Get the session (this function is called from the backend using the refresh token)
+      sessionRef: Identity(),
+      session: Get(Var('sessionRef')),
+      accountRef: Select(['data', 'account'], Var('session')),
+      allAccountTokens: Match(Index('tokens_by_instance'), Var('accountRef')),
+      // there might be other sessions for this account (other devices)
+      allSessions: Paginate(Match(Index('account_sessions_by_account'), Var('accountRef')), { size: 100000 }),
+      allRefreshTokens: q.Map(
+        Var('allSessions'),
+        Lambda(
+          ['otherSessionRef'],
+          Select(['data'], Paginate(Match(Index('tokens_by_instance'), Var('otherSessionRef'))))
+        )
+      )
+    },
+    {
+      allRefreshTokensDeleted: DeleteAllAndCount(Union(Select(['data'], Var('allRefreshTokens')))),
+      allAccountTokens: DeleteAllAndCount(Select(['data'], Paginate(Var('allAccountTokens'))))
+    }
+  )
+}
+
+function DeleteAllAndCount(pageOfTokens) {
+  return Count(q.Map(pageOfTokens, Lambda(['tokenRef'], Delete(Var('tokenRef')))))
+}
+
+export { LoginAccount, LogoutAllSessions, LogoutCurrentSession }

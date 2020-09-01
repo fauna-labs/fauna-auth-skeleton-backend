@@ -1,0 +1,29 @@
+{
+  "name": "fwitter-backend",
+  "version": "1.0.0",
+  "dependencies": {
+    "cookie-parser": "~1.4.4",
+    "cookie-session": "^1.4.0",
+    "cors": "^2.8.5",
+    "debug": "~2.6.9",
+    "dotenv": "^8.2.0",
+    "esm": "^3.2.25",
+    "express": "~4.16.1",
+    "express-session": "^1.17.1",
+    "faunadb": "^2.14.2",
+    "morgan": "~1.9.1",
+    "nodemailer": "^6.4.8",
+    "url-join": "^4.0.1",
+    "urljoin": "^0.1.5"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.3"
+  },
+  "scripts": {
+    "start": "nodemon -r esm ./bin/www local",
+    "setup": "node -r esm ./scripts/setup.js local",
+    "destroy": "node -r esm ./scripts/destroy.js local",
+    "populate": "node -r esm ./scripts/populate.js local",
+    "updatefunctions": "node -r esm ./scripts/updatefunctions.js local"
+  }
+}

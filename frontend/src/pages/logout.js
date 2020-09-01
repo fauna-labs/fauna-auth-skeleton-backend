@@ -6,9 +6,8 @@ import SessionContext from './../context/session'
 import { faunaQueries } from '../fauna/query-manager'
 
 // Components
-const handleLogout = (event, history, sessionContext) => {
-  faunaQueries
-    .logout()
+const handleLogout = (event, faunaQueryFun, history, sessionContext) => {
+  faunaQueryFun()
     .then(res => {
       toast.success('Logout successful')
       sessionContext.dispatch({ type: 'logout', data: null })
@@ -29,7 +28,6 @@ const handleLogout = (event, history, sessionContext) => {
 const Logout = props => {
   const history = useHistory()
   const sessionContext = useContext(SessionContext)
-
   const { user } = sessionContext.state
 
   if (user) {
@@ -42,8 +40,19 @@ const Logout = props => {
         </div>
         <div className="form">
           <div className="input-row margin-top-50">
-            <button onClick={e => handleLogout(e, history, sessionContext)} className={'logout' + ' align-right'}>
-              Logout
+            <button
+              onClick={e => handleLogout(e, faunaQueries.logout, history, sessionContext)}
+              className={'logout align-right'}
+            >
+              Log out this session
+            </button>
+          </div>
+          <div className="input-row margin-top-50">
+            <button
+              onClick={e => handleLogout(e, faunaQueries.logoutAll, history, sessionContext)}
+              className={'logout align-right'}
+            >
+              Log out all sessions
             </button>
           </div>
         </div>

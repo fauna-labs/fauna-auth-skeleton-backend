@@ -3,8 +3,17 @@ import { createDinoCollection, PopulateDinos } from './dinos'
 import { handleSetupError } from '../helpers/errors'
 import { executeFQL } from '../helpers/fql'
 
-import { CreateBootstrapRole, CreateFnRoleLogin, CreateFnRoleRegister, CreateLoggedInRole } from './roles'
-import { LoginUDF, RegisterUDF } from './functions'
+import {
+  CreateBootstrapRoleBackend,
+  CreateBootstrapRoleFrontend,
+  CreateFnRoleLogin,
+  CreateFnRoleRegister,
+  CreateLoggedInRole,
+  CreateLoggedInRoleAdmin,
+  CreateFnRoleRefreshTokens,
+  CreateRefreshRole
+} from './roles'
+import { LoginUDF, RegisterUDF, RefreshTokenUDF, LogoutAllUDF, LogoutUDF } from './functions'
 
 async function setupDatabase(client) {
   const resAccounts = await handleSetupError(
@@ -16,16 +25,24 @@ async function setupDatabase(client) {
   // Before we define functions we need to define the roles that will be assigned to them.
   await executeFQL(client, CreateFnRoleLogin, 'roles - function role - login')
   await executeFQL(client, CreateFnRoleRegister, 'roles - function role - register')
+  await executeFQL(client, CreateFnRoleRefreshTokens, 'roles - function role - refresh')
 
   // Define the functions we will use
   await executeFQL(client, LoginUDF, 'functions - login')
   await executeFQL(client, RegisterUDF, 'functions - register')
+  await executeFQL(client, RefreshTokenUDF, 'functions - refresh')
+  await executeFQL(client, LogoutAllUDF, 'functions - logout all')
+  await executeFQL(client, LogoutUDF, 'functions - logout')
 
   // Now that we have defined the functions, the bootstrap role will give access to these functions.
-  await executeFQL(client, CreateBootstrapRole, 'roles - normal - bootstrap')
+  await executeFQL(client, CreateBootstrapRoleBackend, 'roles - normal - bootstrap backend')
+  await executeFQL(client, CreateBootstrapRoleFrontend, 'roles - normal - bootstrap frontend')
+
   // Finally the membership role will give logged in Accounts (literally members from the Accounts collection)
   // access to the protected data.
   await executeFQL(client, CreateLoggedInRole, 'roles - membership role - logged in')
+  await executeFQL(client, CreateLoggedInRoleAdmin, 'roles - membership role - logged in admin role')
+  await executeFQL(client, CreateRefreshRole, 'roles - membership role - refresh')
 
   // Populate, add some mascottes if the collection was newly made
   // (resDinos will contain the collection if it's newly made, else false)

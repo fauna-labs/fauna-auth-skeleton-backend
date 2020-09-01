@@ -1,6 +1,7 @@
 import React, { useEffect, useContext, useState } from 'react'
 import { useHistory } from 'react-router-dom'
 import Loading from '../components/states/loading'
+import { toast } from 'react-toastify'
 
 import { faunaQueries } from '../fauna/query-manager'
 
@@ -12,21 +13,29 @@ const Home = () => {
 
   const history = useHistory()
 
-  // Fetch the fweets on first load.
   const sessionContext = useContext(SessionContext)
   const { user } = sessionContext.state
 
   useEffect(() => {
-    setLoading(true)
-    faunaQueries.getDinos().then(res => {
-      if (res !== false) {
-        setDinos(res)
-        setLoading(false)
-        history.push('/')
-      } else {
-        console.log('do something if no data?')
-      }
-    })
+    if (!user) {
+      setLoading(true)
+      faunaQueries
+        .refresh()
+        .then(data => {
+          if (data) {
+            sessionContext.dispatch({ type: 'login', data: data })
+            setLoading(false)
+          } else {
+            return getDinos(user, setLoading, setDinos, sessionContext)
+          }
+        })
+        .catch(err => {
+          setLoading(false)
+          console.log(err)
+        })
+    } else {
+      getDinos(user, setLoading, setDinos, sessionContext)
+    }
   }, [user, history])
 
   if (loading) {
@@ -46,6 +55,28 @@ const Home = () => {
       </div>
     )
   }
+}
+
+async function getDinos(user, setLoading, setDinos, sessionContext) {
+  return faunaQueries
+    .getDinos()
+    .then(res => {
+      if (res !== false) {
+        setDinos(res)
+        setLoading(false)
+      }
+    })
+    .catch(err => {
+      if (err.description && err.description === 'Unauthorized') {
+        if (user) {
+          sessionContext.dispatch({ type: 'logout', data: null })
+          toast.warn('You have been logged out')
+        } else {
+          toast.error(err.description)
+        }
+      }
+      setLoading(false)
+    })
 }
 
 function showDinos(dinos) {

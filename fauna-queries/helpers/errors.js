@@ -26,4 +26,6 @@ const safeVerifyError = (error, keys) => {
   return error
 }
 
-export { handleSetupError, safeVerifyError }
+const refreshTokenUsed = 'refresh_token_used'
+
+export { handleSetupError, safeVerifyError, refreshTokenUsed }

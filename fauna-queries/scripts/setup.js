@@ -5,6 +5,9 @@ const fs = require('fs')
 
 // This will help to set the bootstrap token in the frontend directly.
 const envfile = require('envfile')
+const envBackend = './../backend/.env.local'
+const envBackendExample = './../backend/.env.local.example'
+
 const envFrontend = './../frontend/.env.local'
 const envFrontendExample = './../frontend/.env.local.example'
 // This script sets up the database to be used for this example application.
@@ -25,12 +28,22 @@ const main = async () => {
   try {
     await setupDatabase(client)
 
-    const CreateBootstrapKey = CreateKey({ role: Role('keyrole_bootstrap') })
-    const bootstrapKey = await executeFQL(client, CreateBootstrapKey, 'key - bootstrap')
+    const CreateBootstrapKey = CreateKey({ role: Role('keyrole_bootstrap_backend') })
+    const bootstrapKey = await executeFQL(client, CreateBootstrapKey, 'key - bootstrap - backend')
+
+    const CreateBootstrapKeyFrontend = CreateKey({ role: Role('keyrole_bootstrap_frontend') })
+    const bootstrapKeyFrontend = await executeFQL(client, CreateBootstrapKeyFrontend, 'key - bootstrap - frontend')
 
     if (bootstrapKey) {
       printEnvFileExplanation()
-      writeExampleEnvFile(envFrontend, envFrontendExample, { REACT_APP_LOCAL___BOOTSTRAP_KEY: bootstrapKey.secret })
+      writeExampleEnvFile(envBackend, envBackendExample, { BOOTSTRAP_KEY: bootstrapKey.secret })
+    }
+
+    if (bootstrapKeyFrontend) {
+      printFrontendEnvFileExplanation()
+      writeExampleEnvFile(envFrontend, envFrontendExample, {
+        REACT_APP_LOCAL___PUBLIC_BOOTSTRAP_KEY: bootstrapKeyFrontend.secret
+      })
     }
   } catch (err) {
     console.error('Unexpected error', err)
@@ -56,8 +69,17 @@ function writeExampleEnvFile(path, examplePath, extra) {
 function printEnvFileExplanation() {
   console.log(
     '\x1b[32m',
-    `The client token to bootstrap your application will be automatically installed in  the .env.local of your frontend`
+    `The backend token to bootstrap your application will be automatically installed in  the .env.local of your backend`
   )
+  console.log('\x1b[33m', `RESTART FRONTEND: do not forget to restart your backend to pick up the new env variable`)
+}
+
+function printFrontendEnvFileExplanation() {
+  console.log(
+    '\x1b[32m',
+    `The client token to bootstrap your application will be automatically installed in  the .env.local of your frontend, if you do not have public data in your frontend, you do not need this! :)`
+  )
+  console.log('\x1b[33m', `RESTART BACKEND: do not forget to restart your frontend to pick up the new env variable`)
 }
 
 main()

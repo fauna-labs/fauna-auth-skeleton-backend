@@ -15,6 +15,7 @@
   "homepage": "https://github.com/fauna-brecht/skeleton-auth#readme",
   "scripts": {
     "start_frontend": "cd frontend && npm run start",
+    "start_backend": "cd backend && npm run start",
     "setup": "cd fauna-queries && npm run setup",
     "destroy": "cd fauna-queries && npm run destroy",
     "update-functions": "cd fauna-queries && npm run update-functions"
@@ -44,5 +45,8 @@
   },
   "eslintConfig": {
     "extends": "react-app"
+  },
+  "dependencies": {
+    "url-join": "^4.0.1"
   }
 }
