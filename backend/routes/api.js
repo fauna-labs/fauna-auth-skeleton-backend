@@ -4,7 +4,7 @@ import express from 'express'
 import faunadb from 'faunadb'
 
 import { HandleLoginError, HandleRegisterError } from './api-errors'
-import { refreshTokenUsed } from '../../fauna-queries/helpers/errors'
+import { refreshTokenUsed, safeVerifyError } from '../../fauna-queries/helpers/errors'
 
 const q = faunadb.query
 const { Call } = q
@@ -20,7 +20,6 @@ const corsOptions = {
 }
 
 // **** Login *****
-
 router.options('/accounts/login', cors(corsOptions))
 router.post('/accounts/login', cors(corsOptions), function(req, res, next) {
   res.status(200)
@@ -34,6 +33,8 @@ router.post('/accounts/login', cors(corsOptions), function(req, res, next) {
     .then(faunaRes => {
       // Set the refreshToken in the httpOnly cookie.
       req.session.refreshToken = faunaRes.refresh.secret
+      req.session.accessToken = faunaRes.access.secret
+      req.session.account = faunaRes.account
       // Then we send the ACCESS token to the frontend to be kept in memory (this also needs to happen over https in a production app)
       // To make sure that the frontend can talk to FaunaDB directly. The ACCESS token is short-lived.
       const result = { account: faunaRes.account, secret: faunaRes.access.secret }
@@ -65,30 +66,80 @@ router.post('/accounts/register', cors(corsOptions), function(req, res, next) {
 router.options('/accounts/refresh', cors(corsOptions))
 router.post('/accounts/refresh', cors(corsOptions), function(req, res, next) {
   res.status(200)
-  if (req.session.refreshToken) {
-    console.log('INFO - Session - found an active session, trying to refresh using refresh token')
-    const client = new faunadb.Client({
-      secret: req.session.refreshToken
-    })
-    return client
-      .query(Call(q.Function('refresh_token')))
-      .then(faunaRes => {
-        if (faunaRes.error && faunaRes.error === refreshTokenUsed) {
-          req.session.refreshToken = null
-          req.session.destroy()
-          return res.status(200).send({ error: refreshTokenUsed })
-        } else {
-          req.session.refreshToken = faunaRes.refresh.secret
-          return res.json({ secret: faunaRes.access.secret, account: faunaRes.account })
-        }
-      })
-      .catch(err => {
-        console.error('Error refreshing', err)
-        return res.json({ error: 'could not refresh' })
-      })
+  const client = new faunadb.Client({
+    secret: req.session.refreshToken
+  })
+  // First verify whether there is an accessToken.
+  // If there is, we'll try to refresh it
+  // (the refresh token has permissions to verify the acces token)
+  const refreshHandler = faunaRes => {
+    if (faunaRes.error && faunaRes.error === refreshTokenUsed) {
+      req.session.refreshToken = null
+      req.session.accessToken = null
+      req.session.account = null
+      req.session.destroy()
+      return res.status(200).send({ error: refreshTokenUsed })
+    } else {
+      req.session.refreshToken = faunaRes.refresh.secret
+      req.session.accessToken = faunaRes.access.secret
+      req.session.account = faunaRes.account
+      return res.json({ secret: faunaRes.access.secret, account: faunaRes.account })
+    }
+  }
+
+  if (req.session.accessToken) {
+    console.log('INFO: verifying access token')
+
+    return (
+      client
+        .query(Call(q.Function('verify_token'), req.session.accessToken))
+        .then(faunaRes => {
+          // If the result is true, the token is still valid.
+          if (faunaRes === true) {
+            console.log('INFO: access token is valid')
+            // since it's still valid we'll just return it to the frontend.
+            return res.json({ secret: req.session.accessToken, account: req.session.account })
+          } else {
+            console.log('INFO: invalid, refreshing token')
+            client.query(Call(q.Function('refresh_token'))).then(faunaRes => {
+              refreshHandler(faunaRes)
+            })
+          }
+          // Else it will receive a new token (if the refresh token was still valid)
+        })
+        // Or return an error if the refresh token was no longer valid or doesn't exist
+        // If you wonder why we did not write this as one FQL function: KeyFromSecret which i
+        // is used in verify_token Aborts in case the token is not there, which requires us to
+        // handle that abort in a different call.
+        .catch(err => {
+          const errorReason = safeVerifyError(err, [
+            'requestResult',
+            'responseContent',
+            'errors', // The errors of the call
+            0,
+            'cause',
+            0,
+            'code'
+          ])
+          // 'instance not found' is what 'KeyFromSecret' will return if you no longer have access
+          // to the access token
+          if (errorReason === 'instance not found') {
+            client
+              .query(Call(q.Function('refresh_token')))
+              .then(faunaRes => {
+                refreshHandler(faunaRes)
+              })
+              .catch(err => {
+                console.log('refresh failed', err)
+              })
+          } else {
+            return res.json({ error: 'could not verify token' })
+          }
+        })
+    )
   } else {
     console.log('INFO - Session - there is no session active, cant refresh')
-    res.json(false)
+    res.json({ error: 'no session' })
   }
 })
 
@@ -122,6 +173,8 @@ router.post('/accounts/logout', cors(corsOptions), async function(req, res) {
       console.log('logout result', JSON.stringify(res, null, 2))
     }
     req.session.refreshToken = null
+    req.session.accessToken = null
+    req.session.account = null
     req.session.destroy()
     return res.json({ logout: true })
   } catch (error) {

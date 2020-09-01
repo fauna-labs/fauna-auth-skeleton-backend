@@ -186,6 +186,12 @@ const CreateRefreshRole = CreateOrUpdateRole({
       actions: {
         call: true
       }
+    },
+    {
+      resource: q.Function('verify_token'),
+      actions: {
+        call: true
+      }
     }
   ]
 })
@@ -195,7 +201,7 @@ const CreateRefreshRole = CreateOrUpdateRole({
  */
 
 const CreateFnRoleRefreshTokens = CreateOrUpdateRole({
-  name: 'functionrole_refresh_tokens_logout',
+  name: 'functionrole_refresh_tokens_logout_verify',
   privileges: [
     {
       resource: Collection('accounts'),

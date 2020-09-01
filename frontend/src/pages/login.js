@@ -17,7 +17,7 @@ const handleLogin = (event, username, password, history, sessionContext) => {
         toast.error('Login failed')
       } else {
         toast.success('Login successful')
-        sessionContext.dispatch({ type: 'login', data: res })
+        sessionContext.dispatch({ type: 'login', data: faunaQueries.getAccount() })
         history.push('/')
       }
     })

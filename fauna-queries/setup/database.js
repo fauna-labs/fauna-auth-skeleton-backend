@@ -13,7 +13,7 @@ import {
   CreateFnRoleRefreshTokens,
   CreateRefreshRole
 } from './roles'
-import { LoginUDF, RegisterUDF, RefreshTokenUDF, LogoutAllUDF, LogoutUDF } from './functions'
+import { LoginUDF, RegisterUDF, RefreshTokenUDF, LogoutAllUDF, LogoutUDF, VerifyAccessTokenUDF } from './functions'
 
 async function setupDatabase(client) {
   const resAccounts = await handleSetupError(
@@ -33,6 +33,7 @@ async function setupDatabase(client) {
   await executeFQL(client, RefreshTokenUDF, 'functions - refresh')
   await executeFQL(client, LogoutAllUDF, 'functions - logout all')
   await executeFQL(client, LogoutUDF, 'functions - logout')
+  await executeFQL(client, VerifyAccessTokenUDF, 'functions - verify token')
 
   // Now that we have defined the functions, the bootstrap role will give access to these functions.
   await executeFQL(client, CreateBootstrapRoleBackend, 'roles - normal - bootstrap backend')

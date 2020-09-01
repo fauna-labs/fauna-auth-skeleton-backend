@@ -2,7 +2,7 @@ import { LogoutAllSessions, LogoutCurrentSession, VerifyAndLogin } from './../qu
 import { RegisterAccount } from './../queries/auth-register'
 
 import { CreateOrUpdateFunction } from './../helpers/fql'
-import { VerifyAndRefresh } from '../queries/auth-refresh'
+import { VerifyUserLockedAndRefresh, VerifyUserLockedAndVerifyAccessToken } from '../queries/auth-refresh'
 
 const faunadb = require('faunadb')
 const q = faunadb.query
@@ -22,20 +22,26 @@ const LoginUDF = CreateOrUpdateFunction({
 
 const RefreshTokenUDF = CreateOrUpdateFunction({
   name: 'refresh_token',
-  body: Query(Lambda([], VerifyAndRefresh())),
-  role: Role('functionrole_refresh_tokens_logout')
+  body: Query(Lambda([], VerifyUserLockedAndRefresh())),
+  role: Role('functionrole_refresh_tokens_logout_verify')
 })
 
 const LogoutAllUDF = CreateOrUpdateFunction({
   name: 'logout_all',
   body: Query(Lambda([], LogoutAllSessions())),
-  role: Role('functionrole_refresh_tokens_logout')
+  role: Role('functionrole_refresh_tokens_logout_verify')
 })
 
 const LogoutUDF = CreateOrUpdateFunction({
   name: 'logout',
   body: Query(Lambda([], LogoutCurrentSession())),
-  role: Role('functionrole_refresh_tokens_logout')
+  role: Role('functionrole_refresh_tokens_logout_verify')
 })
 
-export { RegisterUDF, LoginUDF, RefreshTokenUDF, LogoutAllUDF, LogoutUDF }
+const VerifyAccessTokenUDF = CreateOrUpdateFunction({
+  name: 'verify_token',
+  body: Query(Lambda(['secret'], VerifyUserLockedAndVerifyAccessToken(Var('secret')))),
+  role: Role('functionrole_refresh_tokens_logout_verify')
+})
+
+export { RegisterUDF, LoginUDF, RefreshTokenUDF, LogoutAllUDF, LogoutUDF, VerifyAccessTokenUDF }

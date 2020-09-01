@@ -1,7 +1,9 @@
-import React from 'react'
+import React, { useEffect, useContext } from 'react'
 import PropTypes from 'prop-types'
 import { ToastContainer, toast } from 'react-toastify'
 import { Link, useLocation } from 'react-router-dom'
+import SessionContext from '../context/session'
+import { faunaQueries } from '../fauna/query-manager'
 
 const links = [
   {
@@ -23,7 +25,19 @@ const links = [
 ]
 
 const Layout = props => {
+  const sessionContext = useContext(SessionContext)
   const location = useLocation()
+  useEffect(
+    () => {
+      faunaQueries.checkAccessOrRefresh().then(res => {
+        if (res && !res.error) {
+          sessionContext.dispatch({ type: 'login', data: faunaQueries.getAccount() })
+        }
+      })
+    },
+    // only run once
+    []
+  )
 
   return (
     <div className="page">

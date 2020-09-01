@@ -17,29 +17,24 @@ const Home = () => {
   const { user } = sessionContext.state
 
   useEffect(() => {
-    if (!user) {
-      setLoading(true)
-      faunaQueries
-        .refresh()
-        .then(res => {
-          if (res && res.error) {
-            toast.error(res.error)
-            setLoading(false)
-          } else if (res) {
-            sessionContext.dispatch({ type: 'login', data: res })
-            setLoading(false)
-          } else {
-            return getDinos(user, setLoading, setDinos, sessionContext)
-          }
-        })
-        .catch(err => {
-          setLoading(false)
-          console.log(err)
-        })
-    } else {
-      getDinos(user, setLoading, setDinos, sessionContext)
+    // user might already be stored in the faunaQueries via a query that
+    // was not necessarily triggered by UI.
+    if (!user && faunaQueries.getAccount()) {
+      sessionContext.dispatch({ type: 'login', data: faunaQueries.getAccount() })
     }
-  }, [user, history])
+
+    getDinos(setLoading, setDinos, sessionContext).catch(err => {
+      if (err.description && err.description === 'Unauthorized') {
+        if (user) {
+          sessionContext.dispatch({ type: 'logout', data: null })
+          toast.warn('You have been logged out')
+        } else {
+          toast.error(err.description)
+        }
+      }
+      setLoading(false)
+    })
+  }, [user, history, sessionContext])
 
   if (loading) {
     return Loading()
@@ -60,27 +55,16 @@ const Home = () => {
   }
 }
 
-async function getDinos(user, setLoading, setDinos, sessionContext) {
+async function getDinos(setLoading, setDinos, sessionContext) {
   setLoading(true)
-  return faunaQueries
-    .getDinos()
-    .then(res => {
-      if (res !== false) {
-        setDinos(res)
-        setLoading(false)
-      }
-    })
-    .catch(err => {
-      if (err.description && err.description === 'Unauthorized') {
-        if (user) {
-          sessionContext.dispatch({ type: 'logout', data: null })
-          toast.warn('You have been logged out')
-        } else {
-          toast.error(err.description)
-        }
-      }
+  return faunaQueries.getDinos().then(res => {
+    if (!res.error) {
+      setDinos(res)
       setLoading(false)
-    })
+    } else {
+      setLoading(false)
+    }
+  })
 }
 
 function showDinos(dinos) {

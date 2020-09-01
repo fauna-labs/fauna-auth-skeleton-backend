@@ -17,6 +17,7 @@ class QueryManager {
     })
     this.logout = this.logout.bind(this)
     this.logoutAll = this.logoutAll.bind(this)
+    this.account = null
   }
 
   // Calling the login endpoint which will run the login
@@ -26,6 +27,8 @@ class QueryManager {
       .then(res => {
         if (res) {
           this.client = new faunadb.Client({ secret: res.secret })
+          console.log('going to set account', res)
+          this.account = res.account
           return res.account
         }
         return res
@@ -55,6 +58,7 @@ class QueryManager {
     // At the same time we'll remove all access tokens linked to this refresh token.
     return this.postData(urljoin(process.env.REACT_APP_LOCAL___API, 'api', 'accounts/logout'), {})
       .then(res => {
+        this.account = null
         this.client = new faunadb.Client({ secret: process.env.REACT_APP_LOCAL___PUBLIC_BOOTSTRAP_KEY })
         return res
       })
@@ -67,6 +71,7 @@ class QueryManager {
     // At the same time we'll remove all access tokens linked to this refresh token.
     return this.postData(urljoin(process.env.REACT_APP_LOCAL___API, 'api', 'accounts/logout?all=true'), {})
       .then(res => {
+        this.account = null
         this.client = new faunadb.Client({ secret: process.env.REACT_APP_LOCAL___PUBLIC_BOOTSTRAP_KEY })
         return res
       })
@@ -75,13 +80,14 @@ class QueryManager {
 
   // This endpoint will simply refresh the token by sending the httpOnly cookie to the backend which will
   // send us back the token.
-  refresh() {
+  checkAccessOrRefresh() {
     return this.postData(urljoin(process.env.REACT_APP_LOCAL___API, 'api', 'accounts/refresh'), {})
       .then(res => {
         if (res && res.error) {
           return res
         } else {
           this.client = new faunadb.Client({ secret: res.secret })
+          this.account = res.account
           return res.account
         }
       })
@@ -89,7 +95,35 @@ class QueryManager {
   }
 
   getDinos() {
-    return this.client.query(GetAllDinos).catch(err => console.log('error calling FaunaDB - getDinos', err))
+    return this.wrapCallInRetry(() => this.client.query(GetAllDinos)).catch(err => {
+      console.log('error fetching dinos', err)
+    })
+  }
+
+  getAccount() {
+    return this.account
+  }
+
+  async wrapCallInRetry(queryFun) {
+    return queryFun()
+      .then(res => {
+        return res
+      })
+      .catch(e => {
+        // check whether the server still has a valid access token.
+        // it it doesn't we'll refresh it automatically.
+        return this.checkAccessOrRefresh()
+          .then(res => {
+            if (res) {
+              this.account = res.account
+              return queryFun()
+            }
+          })
+          .catch(err => {
+            console.log('error fetching dinos', err)
+          })
+      })
+    // First check if there is still a valid access token server-side
   }
 
   async postData(url, data = {}) {

@@ -1,5 +1,5 @@
 import faunadb from 'faunadb'
-import { CreateAccessAndRefreshToken } from './auth-tokens'
+import { CreateAccessAndRefreshToken, VerifyAccessToken } from './auth-tokens'
 import { refreshTokenUsed, userLocked } from '../helpers/errors'
 import { LogoutAllSessions } from './auth-login'
 
@@ -24,7 +24,10 @@ const {
   Exists,
   Match,
   Index,
-  Abort
+  Abort,
+  Paginate,
+  Lambda,
+  Delete
 } = q
 
 /** ~~~~~ RefreshToken ~~~
@@ -45,13 +48,34 @@ const {
  *  5. Return both the access and refresh token.
  */
 
-function VerifyAndRefresh() {
+function VerifyUserLockedAndRefresh() {
   return Let(
     {
       session: Get(Identity()),
       accountRef: Select(['data', 'account'], Var('session'))
     },
     If(VerifyUserLocked(Var('accountRef')), Abort(userLocked), RefreshToken())
+  )
+}
+
+// In the next step we will verify whether the access token is still valid
+// since clients that use the same refresh token now also share the same access token
+// if it's still valid for a reasonable time we'll return true.
+// it'll combine a lot of functionality, to make that clear,
+// let's give it the beautifully long name: 'VerifyUserLockedAndVerifyAccessToken'
+function VerifyUserLockedAndVerifyAccessToken(accessTokenSecret) {
+  return Let(
+    {
+      session: Get(Identity()),
+      accountRef: Select(['data', 'account'], Var('session'))
+    },
+    // Verify user locked
+    If(
+      VerifyUserLocked(Var('accountRef')),
+      Abort(userLocked),
+      // Verify if the access token is still valid
+      VerifyAccessToken(accessTokenSecret)
+    )
   )
 }
 
@@ -103,6 +127,15 @@ function InvalidateRefreshToken(sessionRef) {
   // if someone does that two times with the same token though, we'll know and we'll lock the account.
 }
 
+function InvalidateAccessToken(sessionRef) {
+  return Let(
+    {
+      accessTokens: Match(Index('access_tokens_by_session'), sessionRef)
+    },
+    q.Map(Paginate(Var('accessTokens')), Lambda(['tokenRef'], Delete(Var('tokenRef'))))
+  )
+}
+
 function RotateAccessAndRefreshToken(account) {
   return Let(
     {
@@ -117,7 +150,7 @@ function RotateAccessAndRefreshToken(account) {
 
       // Alternative approach without browser sync, you could opt to catch each failed access in your browser
       // and store the access token in the httpOnly cookie as well on a failed access it does a backend call
-      // to get the new access token if there is one (we'll implement this in the next commit)
+      // to get the new access token if there is one.
 
       // > OPTION 2: Invalidate the Refresh token on refresh? yes/no?
       // ------------------------------------------
@@ -125,7 +158,9 @@ function RotateAccessAndRefreshToken(account) {
       // Some implementations even keep refresh tokens around forever and do not even replace them since they consider httpOnly cookies safe enough
       // to do that. That's not my preferred approach.
 
-      // invalidated: InvalidateAccessTokens(Identity()),
+      // In this case we will invalidate access tokens and also store them in the httpOnly cookie for a backup.
+      // and retry a failing call.
+      invalidated: InvalidateAccessToken(Identity()),
       // 4. Invalidate refresh token
       loggedout: InvalidateRefreshToken(Identity()),
       // 3 and 5. Finally, create a new refresh and access token
@@ -168,4 +203,4 @@ function VerifyUserLocked(accountRef) {
   )
 }
 
-export { VerifyAndRefresh, VerifyUserLocked }
+export { VerifyUserLockedAndRefresh, VerifyUserLockedAndVerifyAccessToken, VerifyUserLocked }
