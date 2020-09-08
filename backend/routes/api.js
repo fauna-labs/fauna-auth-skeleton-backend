@@ -2,9 +2,12 @@
 import cors from 'cors'
 import express from 'express'
 import faunadb from 'faunadb'
+import urljoin from 'url-join'
 
 import { HandleLoginError, HandleRegisterError } from './api-errors'
 import { refreshTokenUsed, safeVerifyError } from '../../fauna-queries/helpers/errors'
+import { sendMailTrapEmail } from './../util/emails'
+import { VerifyRegisteredAccount } from '../../fauna-queries/queries/auth-register'
 
 const q = faunadb.query
 const { Call } = q
@@ -57,6 +60,18 @@ router.post('/accounts/register', cors(corsOptions), function(req, res, next) {
   return client
     .query(Call(q.Function('register'), email, password))
     .then(faunaRes => {
+      const environment = process.argv[2]
+      // If environment is anything but production we use mailtrap to 'fake' sending e-mails.
+      if (environment !== 'prod') {
+        sendMailTrapEmail(email, faunaRes.verifyToken.secret)
+      } else {
+        // In production, use a real e-mail service.
+        // There are many options to implement e-mailing, each of them are a bit cumbersome
+        // for a local setup since they need to make sure that users don't use their services
+        // to send spam e-mails. This is outside of the scope of this article but you have the choice of:
+        // Nodemailer (with gmail or anything like that), Mailgun, SparkPost, or Amazon SES, Mandrill, Twilio SendGrid.
+        // .... < your implementation > ....
+      }
       return res.json(faunaRes)
     })
     .catch(err => HandleRegisterError(err, res))
@@ -181,6 +196,27 @@ router.post('/accounts/logout', cors(corsOptions), async function(req, res) {
     console.error('Error logging out', error)
     return res.json({ error: 'could not log out' })
   }
+})
+
+// **** Verify an e-mail verification token *****
+router.options('/accounts/confirm/:verifytoken', cors(corsOptions))
+router.get('/accounts/confirm/:verifytoken', cors(corsOptions), function(req, res, next) {
+  const token = req.params.verifytoken
+  // This token and therefore this client can only access an account
+  // to which this token belongs and the only thing it can do is verify it.
+  const client = new faunadb.Client({
+    secret: token
+  })
+  client
+    .query(VerifyRegisteredAccount())
+    .then(faunaRes => {
+      res.status(200)
+      res.redirect(urljoin(process.env.FRONTEND_DOMAIN, 'accounts/login'))
+    })
+    .catch(err => {
+      console.error(err)
+      res.redirect(urljoin(process.env.FRONTEND_DOMAIN, 'accounts/login', '?error=Could not verify email'))
+    })
 })
 
 module.exports = router

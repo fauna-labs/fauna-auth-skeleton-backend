@@ -16,7 +16,7 @@ export const sendMailTrapEmail = (email, verifyToken) => {
 
   return transport
     .sendMail({
-      from: 'faunafwitter@gmail.com',
+      from: process.env.MAILTRAP_EMAIL,
       to: email,
       subject: 'Please activate your Fwitter account',
       html: `
@@ -26,11 +26,10 @@ export const sendMailTrapEmail = (email, verifyToken) => {
         a      { min-width:196px; border-top:13px solid; border-bottom:13px solid; border-right:24px solid; border-left:24px solid; border-color:#2ea664; border-radius:4px; background-color:#2ea664; color:#ffffff; font-size:18px; line-height:18px; word-break:break-word; display:inline-block; text-align:center; font-weight:900; text-decoration:none !important }
       </style>
       <div> 
-        <h1> Confirm your Fwitter subscription</h1>
+        <h1> Confirm your < my app > subscription</h1>
         <span><a 
           href="${confirmUrl}" 
-          target="_blank"
-          data-saferedirecturl="https://www.google.com/url?q=${confirmUrl};source=gmail&amp;ust=1590760546124000&amp;usg=AFQjCNGKBmhdstNA4bhVAEPv7mZK9QxMsQ">Sign in</a></span>
+          target="_blank">Sign in</a></span>
       </div>
       `
     })

@@ -11,7 +11,8 @@ import {
   CreateLoggedInRole,
   CreateLoggedInRoleAdmin,
   CreateFnRoleRefreshTokens,
-  CreateRefreshRole
+  CreateRefreshRole,
+  CreateAccountVerificationRole
 } from './roles'
 import { LoginUDF, RegisterUDF, RefreshTokenUDF, LogoutAllUDF, LogoutUDF, VerifyAccessTokenUDF } from './functions'
 
@@ -44,7 +45,7 @@ async function setupDatabase(client) {
   await executeFQL(client, CreateLoggedInRole, 'roles - membership role - logged in')
   await executeFQL(client, CreateLoggedInRoleAdmin, 'roles - membership role - logged in admin role')
   await executeFQL(client, CreateRefreshRole, 'roles - membership role - refresh')
-
+  await executeFQL(client, CreateAccountVerificationRole, 'roles - membership role - account verification role')
   // Populate, add some mascottes if the collection was newly made
   // (resDinos will contain the collection if it's newly made, else false)
   if (resDinos) {

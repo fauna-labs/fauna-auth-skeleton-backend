@@ -4,7 +4,7 @@ const faunadb = require('faunadb')
 const q = faunadb.query
 const { Do, Create, CreateCollection, CreateIndex, Collection, Index, Tokens } = q
 
-/* Collection */
+/** *****************************  Accounts  ****************************/
 
 const CreateAccountsCollection = CreateCollection({ name: 'accounts' })
 
@@ -32,6 +32,8 @@ const CreateIndexAccountsByEmail = CreateIndex({
   unique: true,
   serialized: true
 })
+
+/** *****************************  Account sessions  ****************************/
 
 const CreateAccountsSessionRefreshCollection = CreateCollection({ name: 'account_sessions' })
 
@@ -71,6 +73,8 @@ const CreateIndexTokensByInstance = CreateIndex({
   serialized: true
 })
 
+/** *****************************  Accounts locked  ****************************/
+
 const CreateAccountsLockedCollection = CreateCollection({ name: 'accounts_locked' })
 
 const CreateIndexAccountsLockedByAccount = CreateIndex({
@@ -85,6 +89,9 @@ const CreateIndexAccountsLockedByAccount = CreateIndex({
   serialized: true
 })
 
+/** *****************************  Account verification  ****************************/
+const CreateAccountsVerificationCollection = CreateCollection({ name: 'accounts_verification_request' })
+
 async function createAccountCollection(client) {
   const accountsRes = await client.query(IfNotExists(Collection('accounts'), CreateAccountsCollection))
   await client.query(IfNotExists(Collection('account_sessions'), CreateAccountsSessionRefreshCollection))
@@ -95,6 +102,7 @@ async function createAccountCollection(client) {
   await client.query(IfNotExists(Index('tokens_by_instance'), CreateIndexTokensByInstance))
   await client.query(IfNotExists(Collection('accounts_locked'), CreateAccountsLockedCollection))
   await client.query(IfNotExists(Index('accounts_locked_by_account'), CreateIndexAccountsLockedByAccount))
+  await client.query(IfNotExists(Collection('accounts_verification_request'), CreateAccountsVerificationCollection))
 
   return accountsRes
 }
@@ -115,7 +123,8 @@ const PopulateAccounts = Do(
   Create(Collection('accounts'), {
     data: {
       email: 'normal@test.com',
-      type: 'normal'
+      type: 'normal',
+      verified: true
     },
     credentials: {
       password: 'testtest'
@@ -124,7 +133,8 @@ const PopulateAccounts = Do(
   Create(Collection('accounts'), {
     data: {
       email: 'admin@test.com',
-      type: 'admin'
+      type: 'admin',
+      verified: true
     },
     credentials: {
       password: 'testtest'

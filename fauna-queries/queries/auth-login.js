@@ -19,7 +19,9 @@ const {
   Delete,
   Count,
   Union,
-  Exists
+  Exists,
+  Or,
+  Not
 } = q
 
 /* We can write our own custom login function by using 'Identify()' in combination with 'Create(Tokens(), ...)' instead of 'Login()'
@@ -40,7 +42,11 @@ function VerifyAndLogin(email, password) {
       {
         accountRef: Select([0], Paginate(Match(Index('accounts_by_email'), email)))
       },
-      If(VerifyUserLocked(Var('accountRef')), failedResult, LoginAccount(email, password))
+      If(
+        Or(VerifyUserLocked(Var('accountRef')), Not(AccountVerified(Var('accountRef')))),
+        failedResult,
+        LoginAccount(email, password)
+      )
     ),
     failedResult
   )
@@ -118,6 +124,10 @@ function LogoutAllSessions() {
 
 function DeleteAllAndCount(pageOfTokens) {
   return Count(q.Map(pageOfTokens, Lambda(['tokenRef'], Delete(Var('tokenRef')))))
+}
+
+function AccountVerified(accountRef) {
+  return Select(['data', 'verified'], Get(accountRef), false)
 }
 
 export { VerifyAndLogin, LogoutAllSessions, LogoutCurrentSession }

@@ -1,5 +1,5 @@
 import { LogoutAllSessions, LogoutCurrentSession, VerifyAndLogin } from './../queries/auth-login'
-import { RegisterAccount } from './../queries/auth-register'
+import { RegisterAccountWithEmailVerification } from './../queries/auth-register'
 
 import { CreateOrUpdateFunction } from './../helpers/fql'
 import { VerifyUserLockedAndRefresh, VerifyUserLockedAndVerifyAccessToken } from '../queries/auth-refresh'
@@ -10,7 +10,7 @@ const { Query, Lambda, Role, Var } = q
 
 const RegisterUDF = CreateOrUpdateFunction({
   name: 'register',
-  body: Query(Lambda(['email', 'password'], RegisterAccount(Var('email'), Var('password')))),
+  body: Query(Lambda(['email', 'password'], RegisterAccountWithEmailVerification(Var('email'), Var('password')))),
   role: Role('functionrole_register')
 })
 

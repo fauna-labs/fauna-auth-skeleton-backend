@@ -61,6 +61,26 @@ function CreateAccessAndRefreshToken(instance) {
   )
 }
 
+function CreateEmailVerificationToken(accountRef) {
+  return Let(
+    {
+      // first create a document in a collection specifically provided for email verification tokens.
+      // If we create a token in a specific collection, we can more easily control
+      // with roles what the token can do.
+      verification_request: Create(Collection('accounts_verification_request'), {
+        data: {
+          account: accountRef
+        }
+      })
+    },
+    // Create a token that will provide the permissions of the accounts_verification_request document.
+    // The account is linked to it in the document which will be used in the roles to verify the acount.
+    Create(Tokens(), {
+      instance: Select(['ref'], Var('verification_request'))
+    })
+  )
+}
+
 // We will also verify whether it will still be valid for a while which we can do by using the
 // KeyFromSecret function (https://docs.fauna.com/fauna/current/api/fql/functions/keyfromsecret)
 // this function will return the document of the secret we passed to it (e.g. the Token or Key itself)
@@ -83,4 +103,10 @@ function VerifyAccessToken(secret) {
   )
 }
 
-export { VerifyAccessToken, CreateRefreshToken, CreateAccessToken, CreateAccessAndRefreshToken }
+export {
+  VerifyAccessToken,
+  CreateEmailVerificationToken,
+  CreateRefreshToken,
+  CreateAccessToken,
+  CreateAccessAndRefreshToken
+}

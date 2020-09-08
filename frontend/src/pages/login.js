@@ -35,9 +35,12 @@ const handleLogin = (event, username, password, history, sessionContext) => {
 
 const Login = props => {
   const history = useHistory()
+  const queryParams = parseQuery(history.location.search)
+  if (queryParams.error) {
+    toast.error(queryParams.error)
+  }
   const sessionContext = useContext(SessionContext)
   const { user } = sessionContext.state
-
   if (!user) {
     return (
       <Form
@@ -54,6 +57,16 @@ const Login = props => {
       </div>
     )
   }
+}
+
+function parseQuery(queryString) {
+  var query = {}
+  var pairs = (queryString[0] === '?' ? queryString.substr(1) : queryString).split('&')
+  for (var i = 0; i < pairs.length; i++) {
+    var pair = pairs[i].split('=')
+    query[decodeURIComponent(pair[0])] = decodeURIComponent(pair[1] || '')
+  }
+  return query
 }
 
 export default Login
