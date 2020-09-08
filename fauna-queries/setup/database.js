@@ -12,9 +12,18 @@ import {
   CreateLoggedInRoleAdmin,
   CreateFnRoleRefreshTokens,
   CreateRefreshRole,
-  CreateAccountVerificationRole
+  CreateAccountVerificationRole,
+  CreateChangePasswordRequestRole
 } from './roles'
-import { LoginUDF, RegisterUDF, RefreshTokenUDF, LogoutAllUDF, LogoutUDF, VerifyAccessTokenUDF } from './functions'
+import {
+  LoginUDF,
+  RegisterUDF,
+  RefreshTokenUDF,
+  LogoutAllUDF,
+  LogoutUDF,
+  VerifyAccessTokenUDF,
+  RequestResetUDF
+} from './functions'
 
 async function setupDatabase(client) {
   const resAccounts = await handleSetupError(
@@ -35,6 +44,7 @@ async function setupDatabase(client) {
   await executeFQL(client, LogoutAllUDF, 'functions - logout all')
   await executeFQL(client, LogoutUDF, 'functions - logout')
   await executeFQL(client, VerifyAccessTokenUDF, 'functions - verify token')
+  await executeFQL(client, RequestResetUDF, 'functions - request reset')
 
   // Now that we have defined the functions, the bootstrap role will give access to these functions.
   await executeFQL(client, CreateBootstrapRoleBackend, 'roles - normal - bootstrap backend')
@@ -46,6 +56,8 @@ async function setupDatabase(client) {
   await executeFQL(client, CreateLoggedInRoleAdmin, 'roles - membership role - logged in admin role')
   await executeFQL(client, CreateRefreshRole, 'roles - membership role - refresh')
   await executeFQL(client, CreateAccountVerificationRole, 'roles - membership role - account verification role')
+  await executeFQL(client, CreateChangePasswordRequestRole, 'roles - membership role - password reset role')
+
   // Populate, add some mascottes if the collection was newly made
   // (resDinos will contain the collection if it's newly made, else false)
   if (resDinos) {

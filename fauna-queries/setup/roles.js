@@ -1,4 +1,5 @@
-import { CreateOrUpdateRole } from './../helpers/fql'
+import { CreateOrUpdateRole, CreateOrUpdateFunction } from './../helpers/fql'
+import { ChangePassword } from '../queries/auth-reset'
 
 const faunadb = require('faunadb')
 // Use the excellent community-driven library by Eigil
@@ -24,7 +25,8 @@ const {
   All,
   Identity,
   If,
-  ToArray
+  ToArray,
+  Credentials
 } = q
 
 /* The backend will be responsible for the auth flow. We could give it a server key
@@ -41,6 +43,10 @@ const CreateBootstrapRoleBackend = CreateOrUpdateRole({
     },
     {
       resource: q.Function('register'),
+      actions: { call: true }
+    },
+    {
+      resource: q.Function('request_reset'),
       actions: { call: true }
     }
   ]
@@ -149,6 +155,11 @@ const CreateLoggedInRole = CreateOrUpdateRole({
           Lambda(['dinoReference'], Not(Equals(Select(['data', 'rarity'], Get(Var('dinoReference'))), 'legendary')))
         )
       }
+    },
+    // a logged in user can also ask for a password request.
+    {
+      resource: q.Function('request_reset'),
+      actions: { call: true }
     }
   ]
 })
@@ -250,6 +261,10 @@ const CreateFnRoleRefreshTokens = CreateOrUpdateRole({
       actions: { read: true }
     },
     {
+      resource: Index('accounts_by_email'),
+      actions: { read: true }
+    },
+    {
       resource: Index('tokens_by_instance'),
       actions: { read: true }
     },
@@ -263,6 +278,14 @@ const CreateFnRoleRefreshTokens = CreateOrUpdateRole({
     },
     {
       resource: Index('accounts_locked_by_account'),
+      actions: { read: true }
+    },
+    {
+      resource: Collection('accounts_password_reset_request'),
+      actions: { create: true, read: true, delete: true }
+    },
+    {
+      resource: Index('reset_requests_by_account'),
       actions: { read: true }
     }
   ]
@@ -331,6 +354,68 @@ const CreateAccountVerificationRole = CreateOrUpdateRole({
   ]
 })
 
+const CreateChangePasswordRequestRole = CreateOrUpdateRole({
+  name: 'membershiprole_passwordreset',
+  membership: [{ resource: Collection('accounts_password_reset_request') }],
+  privileges: [
+    {
+      resource: Collection('accounts_password_reset_request'),
+      actions: {
+        // Can only read itself.
+        read: Query(Lambda(['ref'], Equals(Identity(), Var('ref'))))
+      }
+    },
+    {
+      resource: Credentials(),
+      actions: {
+        write: true,
+        create: true
+      }
+    },
+    {
+      resource: Collection('accounts'),
+      actions: {
+        // Can only read accounts that the verification is created for.
+        read: Query(
+          Lambda(
+            ['ref'],
+            Let(
+              {
+                // Identity is in this case a document of the accounts_verification_request collection
+                // since we are using a token generated for such a document.
+                // The document has an account reference stored in it
+                account: Select(['data', 'account'], Get(Identity()))
+              },
+              Equals(Var('account'), Var('ref'))
+            )
+          )
+        ),
+        // And it can only change an account that the verification is created for
+        write: Query(
+          Lambda(
+            ['oldData', 'newData', 'ref'],
+            Let(
+              {
+                verification_request: Get(Identity()),
+                account: Select(['data', 'account'], Get(Identity()))
+              },
+              // Verify whether the account we write to is the same account that
+              // the token was issued for. The account we attempt to write to is the 'ref' we receive
+              // as a parameter for the write permission lambda.
+              And(
+                Equals(Var('account'), Var('ref')),
+                // Then verify that nothing else is written to the account except the
+                // new credentials
+                Not(AttributesChanged(Var('oldData'), Var('newData'), ['credentials']))
+              )
+            )
+          )
+        )
+      }
+    }
+  ]
+})
+
 // A helper function inspired by the excellent community-driven library:
 // https://github.com/shiftx/faunadb-fql-lib
 function ObjectKeys(object) {
@@ -374,5 +459,6 @@ export {
   CreateFnRoleRegister,
   CreateFnRoleRefreshTokens,
   CreateLoggedInRole,
-  CreateLoggedInRoleAdmin
+  CreateLoggedInRoleAdmin,
+  CreateChangePasswordRequestRole
 }

@@ -4,10 +4,11 @@ import express from 'express'
 import faunadb from 'faunadb'
 import urljoin from 'url-join'
 
-import { HandleLoginError, HandleRegisterError } from './api-errors'
+import { HandleLoginError, HandleRegisterError, HandleResetError } from './api-errors'
 import { refreshTokenUsed, safeVerifyError } from '../../fauna-queries/helpers/errors'
-import { sendMailTrapEmail } from './../util/emails'
+import { sendPasswordResetEmail, sendAccountVerificationEmail } from './../util/emails'
 import { VerifyRegisteredAccount } from '../../fauna-queries/queries/auth-register'
+import { ChangePassword } from '../../fauna-queries/queries/auth-reset'
 
 const q = faunadb.query
 const { Call } = q
@@ -63,7 +64,7 @@ router.post('/accounts/register', cors(corsOptions), function(req, res, next) {
       const environment = process.argv[2]
       // If environment is anything but production we use mailtrap to 'fake' sending e-mails.
       if (environment !== 'prod') {
-        sendMailTrapEmail(email, faunaRes.verifyToken.secret)
+        sendAccountVerificationEmail(email, faunaRes.verifyToken.secret)
       } else {
         // In production, use a real e-mail service.
         // There are many options to implement e-mailing, each of them are a bit cumbersome
@@ -198,6 +199,36 @@ router.post('/accounts/logout', cors(corsOptions), async function(req, res) {
   }
 })
 
+// **** Reset *****
+router.options('/accounts/reset', cors(corsOptions))
+router.post('/accounts/reset', cors(corsOptions), function(req, res, next) {
+  res.status(200)
+  const client = new faunadb.Client({
+    secret: process.env.BOOTSTRAP_KEY
+  })
+  const { email } = req.body
+
+  return client
+    .query(Call(q.Function('request_reset'), email))
+    .then(faunaRes => {
+      const environment = process.argv[2]
+      // If environment is anything but production we use mailtrap to 'fake' sending e-mails.
+      if (environment !== 'prod') {
+        sendPasswordResetEmail(email, faunaRes.secret)
+      } else {
+        // In production, use a real e-mail service.
+        // There are many options to implement e-mailing, each of them are a bit cumbersome
+        // for a local setup since they need to make sure that users don't use their services
+        // to send spam e-mails. This is outside of the scope of this article but you have the choice of:
+        // Nodemailer (with gmail or anything like that), Mailgun, SparkPost, or Amazon SES, Mandrill, Twilio SendGrid.
+        // .... < your implementation > ....
+      }
+      // we just send 'ok' back, no information on whether an email was found.
+      return res.json({ ok: true })
+    })
+    .catch(err => HandleResetError(err, res))
+})
+
 // **** Verify an e-mail verification token *****
 router.options('/accounts/confirm/:verifytoken', cors(corsOptions))
 router.get('/accounts/confirm/:verifytoken', cors(corsOptions), function(req, res, next) {
@@ -217,6 +248,37 @@ router.get('/accounts/confirm/:verifytoken', cors(corsOptions), function(req, re
       console.error(err)
       res.redirect(urljoin(process.env.FRONTEND_DOMAIN, 'accounts/login', '?error=Could not verify email'))
     })
+})
+
+router.options('/accounts/password/', cors(corsOptions))
+router.post('/accounts/password/', cors(corsOptions), function(req, res, next) {
+  const { password, token } = req.body
+
+  // we will use the token here which is the password reset token.
+  // the only thing it can do is reset a password (we defined that in the FaunaDB roles)
+  const client = new faunadb.Client({
+    secret: token
+  })
+
+  client
+    .query(ChangePassword(password))
+    .then(faunaRes => {
+      res.status(200)
+      res.redirect(urljoin(process.env.FRONTEND_DOMAIN, 'accounts/login'))
+    })
+    .catch(err => {
+      console.error(err)
+      return res.json({ error: 'could not reset password' })
+    })
+  // This token and therefore this client can only access an account
+  // to which this token belongs and the only thing it can do is reset it with a new password.
+  // we will send this to the frontend which has to happen over https! For more information on good reset flows read:
+  // https://www.troyhunt.com/everything-you-ever-wanted-to-know/
+
+  // we'll send this token in the query parameters (there might be better ways as this will store it in your
+  // browsers history as well which ain't great) but will make sure the token is 1 time use only and
+  // that the token is invalidated after 1 hour.
+  // res.redirect(urljoin(process.env.FRONTEND_DOMAIN, `accounts/reset?token=${token}`))
 })
 
 module.exports = router

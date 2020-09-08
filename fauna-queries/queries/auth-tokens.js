@@ -1,9 +1,27 @@
 import faunadb from 'faunadb'
 
 const q = faunadb.query
-const { Let, Var, Create, Select, Tokens, Collection, Now, TimeAdd, KeyFromSecret, GTE } = q
+const {
+  Let,
+  Var,
+  Create,
+  Select,
+  Tokens,
+  Collection,
+  Now,
+  TimeAdd,
+  KeyFromSecret,
+  GTE,
+  Paginate,
+  Match,
+  Index,
+  Lambda,
+  Delete,
+  Do
+} = q
 
 const ACCESS_TOKEN_LIFETIME_SECONDS = 600 // 10 minutes
+const RESET_TOKEN_LIFETIME_SECONDS = 1800 // 30 minutes
 const REFRESH_TOKEN_LIFETIME_SECONDS = 28800 // 8 hours
 
 function CreateAccessToken(instance, sessionDoc) {
@@ -81,6 +99,26 @@ function CreateEmailVerificationToken(accountRef) {
   )
 }
 
+function CreatePasswordResetToken(accountRef) {
+  return Let(
+    {
+      // If we create a token in a specific collection, we can more easily control
+      // with roles what the token can do.
+      reset_request: Create(Collection('accounts_password_reset_request'), {
+        data: {
+          account: accountRef
+        }
+      })
+    },
+    // Create a token that will provide the permissions of the accounts_verification_request document.
+    // The account is linked to it in the document which will be used in the roles to verify the acount.
+    Create(Tokens(), {
+      instance: Select(['ref'], Var('reset_request')),
+      ttl: TimeAdd(Now(), RESET_TOKEN_LIFETIME_SECONDS, 'seconds')
+    })
+  )
+}
+
 // We will also verify whether it will still be valid for a while which we can do by using the
 // KeyFromSecret function (https://docs.fauna.com/fauna/current/api/fql/functions/keyfromsecret)
 // this function will return the document of the secret we passed to it (e.g. the Token or Key itself)
@@ -103,10 +141,31 @@ function VerifyAccessToken(secret) {
   )
 }
 
+function InvalidateResetTokens(accountRef) {
+  return Let(
+    {
+      resetRequests: Paginate(Match(Index('reset_requests_by_account'), accountRef)),
+      resetTokens: q.Map(
+        Var('resetRequests'),
+        // there should always only be one, hence we can do the Select([0], ...) to get the first reference
+        Lambda(['req'], Select([0], Paginate(Match(Index('tokens_by_instance'), Var('req')))))
+      )
+    },
+    // We'll delete both the documents and the tokens in this case to make sure
+    // we don't end up going through a larger list if someone resets a lot.
+    Do(
+      q.Map(Var('resetTokens'), Lambda(['tokenRef'], Delete(Var('tokenRef')))),
+      q.Map(Var('resetRequests'), Lambda(['resetRequestRef'], Delete(Var('resetRequestRef'))))
+    )
+  )
+}
+
 export {
   VerifyAccessToken,
   CreateEmailVerificationToken,
   CreateRefreshToken,
   CreateAccessToken,
-  CreateAccessAndRefreshToken
+  CreateAccessAndRefreshToken,
+  CreatePasswordResetToken,
+  InvalidateResetTokens
 }

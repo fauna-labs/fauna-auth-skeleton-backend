@@ -27,7 +27,6 @@ class QueryManager {
       .then(res => {
         if (res) {
           this.client = new faunadb.Client({ secret: res.secret })
-          console.log('going to set account', res)
           this.account = res.account
           return res.account
         }
@@ -38,9 +37,22 @@ class QueryManager {
       })
   }
 
-  // Calling the register endpoint which will run the register
-  // Fauna query from the backend and send use the token + set a httpOnly cookie for refreshing the token
-  register(email, password, name, alias) {
+  // Calling the reset endpoint which will run the reset from the backend
+  // which will send a reset email containing the reset token.
+  reset(email) {
+    return this.postData(urljoin(process.env.REACT_APP_LOCAL___API, 'api', 'accounts/reset'), {
+      email
+    }).catch(err => {
+      console.log('error calling backend - reset', err)
+      if (err.error) {
+        throw err
+      }
+    })
+  }
+
+  // Calling the reset endpoint which will run the register from the backend
+  // which will send a reset email containing the register token.
+  register(email, password) {
     return this.postData(urljoin(process.env.REACT_APP_LOCAL___API, 'api', 'accounts/register'), {
       email,
       password
@@ -82,6 +94,20 @@ class QueryManager {
   // send us back the token.
   checkAccessOrRefresh() {
     return this.postData(urljoin(process.env.REACT_APP_LOCAL___API, 'api', 'accounts/refresh'), {})
+      .then(res => {
+        if (res && res.error) {
+          return res
+        } else {
+          this.client = new faunadb.Client({ secret: res.secret })
+          this.account = res.account
+          return res.account
+        }
+      })
+      .catch(err => console.log('error calling frontend - refresh', err))
+  }
+
+  changePassword(password, token) {
+    return this.postData(urljoin(process.env.REACT_APP_LOCAL___API, 'api', 'accounts/password'), { password, token })
       .then(res => {
         if (res && res.error) {
           return res

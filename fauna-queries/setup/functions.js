@@ -3,6 +3,7 @@ import { RegisterAccountWithEmailVerification } from './../queries/auth-register
 
 import { CreateOrUpdateFunction } from './../helpers/fql'
 import { VerifyUserLockedAndRefresh, VerifyUserLockedAndVerifyAccessToken } from '../queries/auth-refresh'
+import { RequestPasswordReset } from '../queries/auth-reset'
 
 const faunadb = require('faunadb')
 const q = faunadb.query
@@ -38,10 +39,16 @@ const LogoutUDF = CreateOrUpdateFunction({
   role: Role('functionrole_refresh_tokens_logout_verify')
 })
 
+const RequestResetUDF = CreateOrUpdateFunction({
+  name: 'request_reset',
+  body: Query(Lambda(['email'], RequestPasswordReset(Var('email')))),
+  role: Role('functionrole_refresh_tokens_logout_verify')
+})
+
 const VerifyAccessTokenUDF = CreateOrUpdateFunction({
   name: 'verify_token',
   body: Query(Lambda(['secret'], VerifyUserLockedAndVerifyAccessToken(Var('secret')))),
   role: Role('functionrole_refresh_tokens_logout_verify')
 })
 
-export { RegisterUDF, LoginUDF, RefreshTokenUDF, LogoutAllUDF, LogoutUDF, VerifyAccessTokenUDF }
+export { RegisterUDF, LoginUDF, RefreshTokenUDF, LogoutAllUDF, LogoutUDF, VerifyAccessTokenUDF, RequestResetUDF }

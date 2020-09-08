@@ -4,6 +4,7 @@ import PropTypes from 'prop-types'
 const Form = props => {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
+  const [rpassword, setRPassword] = useState('')
 
   const handleChangeUserName = event => {
     setUsername(event.target.value)
@@ -13,12 +14,22 @@ const Form = props => {
     setPassword(event.target.value)
   }
 
+  const handleChangeRepeatedPassword = event => {
+    setRPassword(event.target.value)
+  }
+
   function renderFields() {
     return (
       <React.Fragment>
-        {renderInputField('Email', username, 'text', e => handleChangeUserName(e), 'username')}
-        {props.formType === 'register' || props.formType === 'login'
+        {props.formType !== 'change_password'
+          ? renderInputField('Email', username, 'text', e => handleChangeUserName(e), 'username')
+          : null}
+        {props.formType === 'register' || props.formType === 'login' || props.formType === 'change_password'
           ? renderInputField('Password', password, 'password', e => handleChangePassword(e), 'current-password')
+          : null}
+
+        {props.formType === 'change_password'
+          ? renderInputField('Repeat', rpassword, 'password', e => handleChangeRepeatedPassword(e), 'current-password')
           : null}
       </React.Fragment>
     )
@@ -26,7 +37,7 @@ const Form = props => {
 
   function renderForm() {
     return (
-      <form className="form" onSubmit={e => props.handleSubmit(e, username, password)}>
+      <form className="form" onSubmit={e => props.handleSubmit(e, username, password, rpassword)}>
         {renderFields()}
         <div className="input-row margin-top-50">
           <button className={props.formType + ' align-right'}> {props.formType} </button>

@@ -4,6 +4,7 @@ import { toast } from 'react-toastify'
 
 import SessionContext from './../context/session'
 import { faunaQueries } from '../fauna/query-manager'
+import parseQuery from './../util/parse-query'
 
 // Components
 import Form from '../components/form'
@@ -12,7 +13,6 @@ const handleLogin = (event, username, password, history, sessionContext) => {
   faunaQueries
     .login(username, password)
     .then(res => {
-      console.log(res)
       if (res === false) {
         toast.error('Login failed')
       } else {
@@ -57,16 +57,6 @@ const Login = props => {
       </div>
     )
   }
-}
-
-function parseQuery(queryString) {
-  var query = {}
-  var pairs = (queryString[0] === '?' ? queryString.substr(1) : queryString).split('&')
-  for (var i = 0; i < pairs.length; i++) {
-    var pair = pairs[i].split('=')
-    query[decodeURIComponent(pair[0])] = decodeURIComponent(pair[1] || '')
-  }
-  return query
 }
 
 export default Login

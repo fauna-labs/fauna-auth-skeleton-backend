@@ -92,6 +92,20 @@ const CreateIndexAccountsLockedByAccount = CreateIndex({
 /** *****************************  Account verification  ****************************/
 const CreateAccountsVerificationCollection = CreateCollection({ name: 'accounts_verification_request' })
 
+/** *****************************  Account password reset  ****************************/
+const CreateAccountsPasswordResetCollection = CreateCollection({ name: 'accounts_password_reset_request' })
+const CreateIndexResetRequestByAccount = CreateIndex({
+  name: 'reset_requests_by_account',
+  source: Collection('accounts_password_reset_request'),
+  terms: [
+    {
+      field: ['data', 'account']
+    }
+  ],
+  unique: true,
+  serialized: true
+})
+
 async function createAccountCollection(client) {
   const accountsRes = await client.query(IfNotExists(Collection('accounts'), CreateAccountsCollection))
   await client.query(IfNotExists(Collection('account_sessions'), CreateAccountsSessionRefreshCollection))
@@ -103,7 +117,8 @@ async function createAccountCollection(client) {
   await client.query(IfNotExists(Collection('accounts_locked'), CreateAccountsLockedCollection))
   await client.query(IfNotExists(Index('accounts_locked_by_account'), CreateIndexAccountsLockedByAccount))
   await client.query(IfNotExists(Collection('accounts_verification_request'), CreateAccountsVerificationCollection))
-
+  await client.query(IfNotExists(Collection('accounts_password_reset_request'), CreateAccountsPasswordResetCollection))
+  await client.query(IfNotExists(Index('reset_requests_by_account'), CreateIndexResetRequestByAccount))
   return accountsRes
 }
 
@@ -115,8 +130,11 @@ async function deleteAccountsCollection(client) {
   await client.query(DeleteIfExists(Index('access_tokens_by_session')))
   await client.query(DeleteIfExists(Index('account_sessions_by_account')))
   await client.query(DeleteIfExists(Index('tokens_by_instance')))
-  await client.query(DeleteIfExists(Index('accounts_locked')))
+  await client.query(DeleteIfExists(Collection('accounts_locked')))
   await client.query(DeleteIfExists(Index('accounts_locked_by_account')))
+  await client.query(DeleteIfExists(Collection('accounts_verification_request')))
+  await client.query(DeleteIfExists(Collection('accounts_password_reset_request')))
+  await client.query(DeleteIfExists(Index('reset_requests_by_account')))
 }
 
 const PopulateAccounts = Do(

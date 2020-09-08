@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Route, Switch } from 'react-router-dom'
 import Home from './pages/home'
 import Login from './pages/login'
 import Register from './pages/register'
+import Reset from './pages/reset'
 import Logout from './pages/logout'
 
 import Layout from './components/layout'
@@ -24,6 +25,9 @@ const App = () => {
               </Route>
               <Route exact path="/accounts/register">
                 <Register />
+              </Route>
+              <Route exact path="/accounts/reset">
+                <Reset />
               </Route>
               <Route exact path="/accounts/logout">
                 <Logout />

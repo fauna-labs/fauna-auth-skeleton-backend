@@ -40,3 +40,8 @@ export const HandleRegisterError = (err, res) => {
     res.status(500).send({ error: 'Oops something went wrong' })
   }
 }
+
+export const HandleResetError = (err, res) => {
+  // no special handling atm
+  console.log(err)
+}
