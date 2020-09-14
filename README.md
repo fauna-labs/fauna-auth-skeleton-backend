@@ -1,4 +1,5 @@
-# Skeleton auth - backend-partial-extras
+# FaunaDB Auth skeleton
+
 ## Disclaimer
 This resource is intended as educational material. You can use this however you want are your own risk. 
 Take into account that security is a tricky subject and I'm not a security expert. Please do not copy code blindly and think about it.
@@ -68,3 +69,9 @@ By default, the setup script has created two users for you.
 * admin@test.com
 
 They both share the same password: 'testtest'
+
+## More to come
+More branches will follow. We are currently planning
+
+* Identity provider integrations (such as Auth0/Okta/...)
+* An implementation with SuperTokens.io (and a simple lib that integrates SuperTokens seamlessly with FaunaDB tokens)
