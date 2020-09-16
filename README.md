@@ -1,9 +1,7 @@
 # FaunaDB Auth skeleton
 
-## Disclaimer
-This resource is intended as educational material. You can use this however you want are your own risk. 
-Take into account that security is a tricky subject and I'm not a security expert. Please do not copy code blindly and think about it.
-If you spot a mistake, please contact me. 
+## In review
+This resource is intended as educational material and is currently in review. Feel free to reach out to me in case you find a problem. 
 
 ## What is this skeleton?
 This repository contains ideas and implementations for the implementation of authentication with FaunaDB. 
