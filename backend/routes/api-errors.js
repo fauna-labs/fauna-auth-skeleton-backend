@@ -1,6 +1,6 @@
 import { safeVerifyError } from '../../fauna-queries/helpers/errors'
 
-export const HandleLoginError = (err, res) => {
+export const handleLoginError = (err, res) => {
   const codeAndDescription = safeVerifyError(err, [
     'requestResult',
     'responseContent',
@@ -19,7 +19,7 @@ export const HandleLoginError = (err, res) => {
   }
 }
 
-export const HandleRegisterError = (err, res) => {
+export const handleRegisterError = (err, res) => {
   const codeAndDescription = safeVerifyError(err, [
     'requestResult',
     'responseContent',
@@ -41,7 +41,19 @@ export const HandleRegisterError = (err, res) => {
   }
 }
 
-export const HandleResetError = (err, res) => {
+export const getRefreshErrorCode = err => {
+  return safeVerifyError(err, [
+    'requestResult',
+    'responseContent',
+    'errors', // The errors of the call
+    0,
+    'cause',
+    0,
+    'code'
+  ])
+}
+
+export const handleResetError = (err, res) => {
   // no special handling atm
   console.log(err)
 }
