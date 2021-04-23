@@ -1,9 +1,9 @@
-import faunadb from 'faunadb'
+import fauna from 'faunadb'
 import { CreateAccessAndRefreshToken, VerifyAccessToken } from './auth-tokens'
 import { refreshTokenUsed, userLocked } from '../helpers/errors'
 import { LogoutAllSessions } from './auth-login'
 
-const q = faunadb.query
+const q = fauna.query
 const {
   Let,
   Get,

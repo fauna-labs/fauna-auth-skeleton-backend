@@ -3,7 +3,7 @@ import { useHistory } from 'react-router-dom'
 import { toast } from 'react-toastify'
 
 import SessionContext from './../context/session'
-import { faunaQueries } from '../fauna/query-manager'
+import { faunaAPI } from '../api/fauna-api'
 import parseQuery from './../util/parse-query'
 
 // Components
@@ -11,7 +11,7 @@ import Form from '../components/form'
 
 const handleResetRequest = (event, username, history, sessionContext) => {
   event.preventDefault()
-  faunaQueries
+  faunaAPI
     .reset(username)
     .then(res => {
       console.log(res)
@@ -39,7 +39,7 @@ const handleResetPassword = (event, password, rpassword, history, sessionContext
   if (password !== rpassword) {
     toast.error('Passwords do not match')
   } else {
-    faunaQueries
+    faunaAPI
       .changePassword(password, queryParams.token)
       .then(res => {
         if (res === false) {

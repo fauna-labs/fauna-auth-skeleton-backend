@@ -1,0 +1,7 @@
+CreateFunction({
+  name: "is_verified",
+  body: Query(Lambda(["email"], Let([{
+    account: Get(Match(Index("accounts_by_email"), Var("email")))
+  }], Equals(Select(["data", "verified"], Var("account"), false), true)))),
+  role: "server"
+})

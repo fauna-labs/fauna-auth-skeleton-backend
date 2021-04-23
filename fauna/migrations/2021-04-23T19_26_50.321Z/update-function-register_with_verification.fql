@@ -1,0 +1,10 @@
+Update(Function("register_with_verification"), {
+  body: Query(Lambda(["email", "password"], Let([{
+    account: Call("register", [Var("email"), Var("password")])
+  }], {
+    verificationToken: Call("get_account_verification_token", Select(["ref"], Var("account"))),
+    account: Var("account")
+  }))),
+  role: "server",
+  data: null
+})

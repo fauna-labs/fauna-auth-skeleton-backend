@@ -1,14 +1,13 @@
 import React from 'react'
 import { toast } from 'react-toastify'
-import { faunaQueries } from '../fauna/query-manager'
-
-// Components
+import * as backendAPI from '../api/backend-api'
 import Form from './../components/form'
 
 const handleRegister = (event, username, password) => {
-  faunaQueries
+  backendAPI
     .register(username, password)
     .then(e => {
+      console.log(e)
       toast.success('User registered')
     })
     .catch(e => {

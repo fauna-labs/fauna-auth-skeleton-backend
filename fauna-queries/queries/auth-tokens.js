@@ -1,6 +1,6 @@
-import faunadb from 'faunadb'
+import fauna from 'faunadb'
 
-const q = faunadb.query
+const q = fauna.query
 const {
   Let,
   Var,

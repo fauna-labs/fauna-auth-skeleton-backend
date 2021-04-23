@@ -1,8 +1,8 @@
-import faunadb from 'faunadb'
+import fauna from 'faunadb'
 import { CreateAccessAndRefreshToken } from './auth-tokens'
 import { VerifyUserLocked } from './auth-refresh'
 
-const q = faunadb.query
+const q = fauna.query
 const {
   Match,
   Index,

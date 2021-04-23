@@ -30,9 +30,19 @@ module.exports = {
       'error',
       {
         'singleQuote': true,
-        'printWidth': 120,
+        'printWidth': 100,
         'semi': false
       }
     ]
-  }
+  },
+  overrides: [
+    {
+      files: ['**/resources/**/*.fql'],
+      rules: {
+        'no-undef': 'off',
+        'no-new-func': 'off'
+      }
+    }
+  ],
+  ignorePatterns: ['temp/']
 }

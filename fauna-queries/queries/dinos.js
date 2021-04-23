@@ -1,6 +1,6 @@
-import faunadb from 'faunadb'
+import fauna from 'faunadb'
 
-const q = faunadb.query
+const q = fauna.query
 const { Paginate, Documents, Collection, Lambda, Get, Var } = q
 
 export const GetAllDinos = q.Map(

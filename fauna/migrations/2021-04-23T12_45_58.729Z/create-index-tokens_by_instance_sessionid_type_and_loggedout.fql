@@ -1,0 +1,14 @@
+CreateIndex({
+  name: "tokens_by_instance_sessionid_type_and_loggedout",
+  source: Tokens(),
+  terms: [{
+    field: ["instance"]
+  }, {
+    field: ["data", "sessionId"]
+  }, {
+    field: ["data", "type"]
+  }, {
+    field: ["data", "loggedOut"]
+  }],
+  serialized: true
+})

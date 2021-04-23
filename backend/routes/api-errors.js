@@ -26,9 +26,10 @@ export const handleRegisterError = (err, res) => {
     'errors', // The errors of the call
     0,
     'cause',
+    0,
+    'cause',
     0
   ])
-  console.log(codeAndDescription)
   if (codeAndDescription && codeAndDescription.code.includes('instance not unique')) {
     res.status(400).send({ error: 'An account with that e-mail or handle already exists' })
   } else if (codeAndDescription && codeAndDescription.code.includes('Invalid e-mail provided')) {

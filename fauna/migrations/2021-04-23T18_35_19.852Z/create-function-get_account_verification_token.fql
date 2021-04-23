@@ -1,0 +1,14 @@
+CreateFunction({
+  name: "get_account_verification_token",
+  body: Query(Lambda(["accountRef"], Let([{
+    verification_request: Create(Collection("email_verification_request"), {
+      data: {
+        account: Var("accountRef")
+      }
+    })
+  }], Create(Tokens(), {
+    instance: Select(["ref"], Var("verification_request")),
+    ttl: TimeAdd(Now(), 600, "seconds")
+  })))),
+  role: "server"
+})

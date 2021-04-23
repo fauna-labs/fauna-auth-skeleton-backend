@@ -3,37 +3,20 @@ import { useHistory } from 'react-router-dom'
 import Loading from '../components/states/loading'
 import { toast } from 'react-toastify'
 
-import { faunaQueries } from '../fauna/query-manager'
-
+import { faunaAPI } from '../api/fauna-api'
 import SessionContext from '../context/session'
 
 const Home = () => {
   const [dinos, setDinos] = useState(null)
   const [loading, setLoading] = useState(false)
-
   const history = useHistory()
-
   const sessionContext = useContext(SessionContext)
   const { user } = sessionContext.state
 
   useEffect(() => {
-    // user might already be stored in the faunaQueries via a query that
-    // was not necessarily triggered by UI.
-    if (!user && faunaQueries.getAccount()) {
-      sessionContext.dispatch({ type: 'login', data: faunaQueries.getAccount() })
-    }
-
-    getDinos(setLoading, setDinos, sessionContext).catch(err => {
-      if (err.description && err.description === 'Unauthorized') {
-        if (user) {
-          sessionContext.dispatch({ type: 'logout', data: null })
-          toast.warn('You have been logged out')
-        } else {
-          toast.error(err.description)
-        }
-      }
-      setLoading(false)
-    })
+    getDinos(setLoading, setDinos).catch(err =>
+      handleLoadingError(err, user, sessionContext, setLoading)
+    )
   }, [user, history, sessionContext])
 
   if (loading) {
@@ -55,9 +38,10 @@ const Home = () => {
   }
 }
 
-async function getDinos(setLoading, setDinos, sessionContext) {
+async function getDinos(setLoading, setDinos) {
   setLoading(true)
-  return faunaQueries.getDinos().then(res => {
+  return faunaAPI.getDinos().then(res => {
+    console.log(res)
     if (!res.error) {
       setDinos(res)
       setLoading(false)
@@ -65,6 +49,18 @@ async function getDinos(setLoading, setDinos, sessionContext) {
       setLoading(false)
     }
   })
+}
+
+function handleLoadingError(err, user, sessionContext, setLoading) {
+  if (err.description && err.description === 'Unauthorized') {
+    if (user) {
+      sessionContext.dispatch({ type: 'logout', data: null })
+      toast.warn('You have been logged out')
+    } else {
+      toast.error(err.description)
+    }
+  }
+  setLoading(false)
 }
 
 function showDinos(dinos) {
@@ -75,7 +71,12 @@ function showDinos(dinos) {
           {d.data.name}
         </span>
         <div className="dino-image-container" key={'dino-card-container-' + i}>
-          <img className="dino-image" key={'dino-card-image' + i} src={`/images/${d.data.icon}`} alt="no results"></img>
+          <img
+            className="dino-image"
+            key={'dino-card-image' + i}
+            src={`/images/${d.data.icon}`}
+            alt="no results"
+          ></img>
         </div>
         <span key={'dino-card-rarity-' + i} className={'dino-rarity ' + d.data.rarity}>
           {d.data.rarity}

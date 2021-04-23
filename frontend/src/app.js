@@ -6,6 +6,7 @@ import Login from './pages/login'
 import Register from './pages/register'
 import Reset from './pages/reset'
 import Logout from './pages/logout'
+import Verify from './pages/verify'
 
 import Layout from './components/layout'
 import { SessionProvider, sessionReducer } from './context/session'
@@ -31,6 +32,9 @@ const App = () => {
               </Route>
               <Route exact path="/accounts/logout">
                 <Logout />
+              </Route>
+              <Route exact path="/accounts/verify/:verification">
+                <Verify />
               </Route>
               <Route path="/">
                 <Home />

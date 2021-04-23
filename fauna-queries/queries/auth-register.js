@@ -1,7 +1,7 @@
-import faunadb from 'faunadb'
+import fauna from 'faunadb'
 import { CreateEmailVerificationToken } from './auth-tokens'
 
-const q = faunadb.query
+const q = fauna.query
 const { Create, Collection, Let, Select, Get, Identity, Update, Var, Logout } = q
 
 /* Register - creating a simple account

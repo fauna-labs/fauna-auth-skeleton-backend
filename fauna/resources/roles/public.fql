@@ -1,0 +1,17 @@
+CreateRole({
+  name: 'public',
+  privileges: [
+    {
+      resource: Function('register_with_verification'),
+      actions: {
+        call: true
+      }
+    },
+    {
+      resource: Function('login'),
+      actions: {
+        call: true
+      }
+    }
+  ]
+})

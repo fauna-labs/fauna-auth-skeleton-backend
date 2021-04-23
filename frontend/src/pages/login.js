@@ -3,21 +3,22 @@ import { useHistory } from 'react-router-dom'
 import { toast } from 'react-toastify'
 
 import SessionContext from './../context/session'
-import { faunaQueries } from '../fauna/query-manager'
+import { faunaAPI } from '../api/fauna-api'
 import parseQuery from './../util/parse-query'
 
 // Components
 import Form from '../components/form'
 
 const handleLogin = (event, username, password, history, sessionContext) => {
-  faunaQueries
+  faunaAPI
     .login(username, password)
     .then(res => {
-      if (res === false) {
+      if (res.code === 'ACCOUNT_NOT_VERIFIED') {
+        toast.warn('Please verify your email first')
+      } else if (res === false) {
         toast.error('Login failed')
       } else {
         toast.success('Login successful')
-        sessionContext.dispatch({ type: 'login', data: faunaQueries.getAccount() })
         history.push('/')
       }
     })
@@ -46,7 +47,9 @@ const Login = props => {
       <Form
         title="Login"
         formType="login"
-        handleSubmit={(event, username, password) => handleLogin(event, username, password, history, sessionContext)}
+        handleSubmit={(event, username, password) =>
+          handleLogin(event, username, password, history, sessionContext)
+        }
       ></Form>
     )
   } else {

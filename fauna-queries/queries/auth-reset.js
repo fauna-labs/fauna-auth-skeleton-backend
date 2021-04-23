@@ -1,6 +1,6 @@
-import faunadb from 'faunadb'
+import fauna from 'faunadb'
 import { CreatePasswordResetToken, InvalidateResetTokens } from './auth-tokens'
-const q = faunadb.query
+const q = fauna.query
 const { If, Exists, Let, Match, Index, Var, Select, Paginate, Get, Identity, Update } = q
 
 function RequestPasswordReset(email) {

@@ -1,0 +1,17 @@
+CreateFunction({
+  name: "verify_account",
+  body: Query(Lambda([], Let([{
+    emailVerificationRequest: Get(CurrentIdentity())
+  }, {
+    accountRef: Select(["data", "account"], Var("emailVerificationRequest"))
+  }, {
+    account: Update(Var("accountRef"), {
+      data: {
+        verified: true
+      }
+    })
+  }, {
+    logout: Logout(true)
+  }], Var("account")))),
+  role: "server"
+})

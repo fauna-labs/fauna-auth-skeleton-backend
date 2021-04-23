@@ -33,12 +33,12 @@ export const sendPasswordResetEmail = (email, resetToken) => {
 
 export const sendAccountVerificationEmail = (email, verifyToken) => {
   // We'll redirect to the backend here
-  const confirmUrl = urljoin(process.env.BACKEND_DOMAIN, 'api', 'accounts/confirm', verifyToken)
+  const confirmUrl = urljoin(process.env.FRONTEND_DOMAIN, '/accounts/verify/', verifyToken)
 
   const content = {
     from: process.env.MAILTRAP_EMAIL,
     to: email,
-    subject: 'Please activate your Fwitter account',
+    subject: 'Please activate your <app> account',
     html: `
     <style>
       form   { background-color: #F3F4F8; }

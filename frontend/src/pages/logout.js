@@ -3,7 +3,7 @@ import { useHistory } from 'react-router-dom'
 import { toast } from 'react-toastify'
 
 import SessionContext from './../context/session'
-import { faunaQueries } from '../fauna/query-manager'
+import { faunaAPI } from '../api/fauna-api'
 
 // Components
 const handleLogout = (event, faunaQueryFun, history, sessionContext) => {
@@ -41,7 +41,7 @@ const Logout = props => {
         <div className="form">
           <div className="input-row margin-top-50">
             <button
-              onClick={e => handleLogout(e, faunaQueries.logout, history, sessionContext)}
+              onClick={e => handleLogout(e, () => faunaAPI.logout(false), history, sessionContext)}
               className={'logout align-right'}
             >
               Log out this session
@@ -49,7 +49,7 @@ const Logout = props => {
           </div>
           <div className="input-row margin-top-50">
             <button
-              onClick={e => handleLogout(e, faunaQueries.logoutAll, history, sessionContext)}
+              onClick={e => handleLogout(e, () => faunaAPI.logout(true), history, sessionContext)}
               className={'logout align-right'}
             >
               Log out all sessions
