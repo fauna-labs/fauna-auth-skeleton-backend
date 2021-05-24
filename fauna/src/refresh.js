@@ -4,7 +4,12 @@ import { RotateAccessAndRefreshToken, VerifyRefreshToken } from './tokens'
 const q = fauna.query
 const { CurrentIdentity, Get } = q
 
-export function RefreshToken(gracePeriodSeconds, accessTtlSeconds, refreshLifetimeSeconds, refreshReclaimtimeSeconds) {
+export function RefreshToken(
+  gracePeriodSeconds,
+  accessTtlSeconds,
+  refreshLifetimeSeconds,
+  refreshReclaimtimeSeconds
+) {
   return VerifyRefreshToken(
     {
       tokens: RotateAccessAndRefreshToken(

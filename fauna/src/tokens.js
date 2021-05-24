@@ -1,5 +1,10 @@
 import faunadb, { If } from 'faunadb'
-import { LogAnomaly, REFRESH_TOKEN_EXPIRED, REFRESH_TOKEN_REUSE_ERROR, REFRESH_TOKEN_USED_AFTER_LOGOUT } from './anomalies'
+import {
+  LogAnomaly,
+  REFRESH_TOKEN_EXPIRED,
+  REFRESH_TOKEN_REUSE_ERROR,
+  REFRESH_TOKEN_USED_AFTER_LOGOUT
+} from './anomalies'
 
 const q = faunadb.query
 const {
@@ -70,7 +75,12 @@ export function CreateRefreshToken(accountRef, lifetimeSeconds, reclaimtimeSecon
   })
 }
 
-export function CreateAccessAndRefreshToken(instance, accessTtlSeconds, refreshLifetimeSeconds, refreshReclaimtimeSeconds) {
+export function CreateAccessAndRefreshToken(
+  instance,
+  accessTtlSeconds,
+  refreshLifetimeSeconds,
+  refreshReclaimtimeSeconds
+) {
   return Let(
     {
       refresh: CreateRefreshToken(instance, refreshLifetimeSeconds, refreshReclaimtimeSeconds),
@@ -84,21 +94,27 @@ export function CreateAccessAndRefreshToken(instance, accessTtlSeconds, refreshL
 }
 
 function CreateOrReuseId() {
-  return If(
-    IsCalledWithRefreshToken(),
-    GetSessionId(),
-    NewId()
-  )
+  return If(IsCalledWithRefreshToken(), GetSessionId(), NewId())
 }
 
 export function GetSessionId() {
   return Select(['data', 'sessionId'], Get(CurrentToken()))
 }
 
-export function RotateAccessAndRefreshToken(gracePeriodSeconds, accessTtlSeconds, refreshLifetimeSeconds, refreshReclaimtimeSeconds) {
+export function RotateAccessAndRefreshToken(
+  gracePeriodSeconds,
+  accessTtlSeconds,
+  refreshLifetimeSeconds,
+  refreshReclaimtimeSeconds
+) {
   return Do(
     InvalidateRefreshToken(CurrentToken(), gracePeriodSeconds),
-    CreateAccessAndRefreshToken(CurrentIdentity(), accessTtlSeconds, refreshLifetimeSeconds, refreshReclaimtimeSeconds)
+    CreateAccessAndRefreshToken(
+      CurrentIdentity(),
+      accessTtlSeconds,
+      refreshLifetimeSeconds,
+      refreshReclaimtimeSeconds
+    )
   )
 }
 
@@ -120,10 +136,13 @@ export function IsCalledWithRefreshToken() {
 }
 
 export function VerifyRefreshToken(fqlStatementOnSuccessfulVerification, action) {
-  return If(And(IsTokenUsed(), Not(IsWithinGracePeriod())),
+  return If(
+    And(IsTokenUsed(), Not(IsWithinGracePeriod())),
     LogAnomaly(REFRESH_TOKEN_REUSE_ERROR, action),
-    If(IsTokenStillValid(),
-      If(Not(IsTokenLoggedOut()),
+    If(
+      IsTokenStillValid(),
+      If(
+        Not(IsTokenLoggedOut()),
         fqlStatementOnSuccessfulVerification,
         LogAnomaly(REFRESH_TOKEN_USED_AFTER_LOGOUT, action)
       ),
@@ -173,8 +192,5 @@ function LogoutRefreshToken(refreshTokenRef) {
 }
 
 export function LogoutAccessAndRefreshToken(refreshTokenRef) {
-  return Do(
-    InvalidateAccessToken(refreshTokenRef),
-    LogoutRefreshToken(refreshTokenRef)
-  )
+  return Do(InvalidateAccessToken(refreshTokenRef), LogoutRefreshToken(refreshTokenRef))
 }
