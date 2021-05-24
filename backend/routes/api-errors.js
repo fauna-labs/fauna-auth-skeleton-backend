@@ -42,6 +42,10 @@ export const handleRegisterError = (err, res) => {
   }
 }
 
+export const handleVerificationError = res => {
+  res.status(500).send({ error: 'Oops something went wrong' })
+}
+
 export const getRefreshErrorCode = err => {
   return safeVerifyError(err, [
     'requestResult',

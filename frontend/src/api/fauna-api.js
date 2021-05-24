@@ -13,10 +13,9 @@ class FaunaAPI {
     this.lastRefresh = null
   }
 
-  /** ******* Authentication via backend *********/
+  /** ******* Authentication is delegated through the backend *********/
   async login(email, password) {
     return await backendAPI.login(email, password).then(loginResult => {
-      console.log(loginResult)
       this.client = this.getClient(loginResult.secret)
       this.lastRefresh = Date.now()
       return loginResult
@@ -35,6 +34,12 @@ class FaunaAPI {
     })
   }
 
+  async sendVerificationEmail(email) {
+    return await backendAPI.sendVerificationEmail(email).then(res => {
+      console.log('Send Verification email result of API', res)
+    })
+  }
+
   /** ******* Calls directly to Fauna*********/
   async verifyEmail(token) {
     const verificationClient = this.getClient(token)
@@ -42,7 +47,6 @@ class FaunaAPI {
   }
 
   async getDinos() {
-    console.log(this.client)
     return await this.callWithRefreshRetry(() => this.client.query(Call('get_all_dinos'))).catch(
       err => {
         console.log('huh?')

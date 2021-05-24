@@ -12,8 +12,8 @@ export function LoginAccount(
   refreshReclaimtimeSeconds
 ) {
   return If(
-    // First check whether the account exists and the account can be identified with the email/password
-    And(VerifyAccountExists(email), IdentifyAccount(email, password)),
+    // Check whether the account be identified with the email/password
+    IdentifyAccount(email, password),
     CreateTokensForAccount(
       email,
       accessTtlSeconds,
@@ -25,11 +25,11 @@ export function LoginAccount(
   )
 }
 
-function GetAccountByEmail(email) {
+export function GetAccountByEmail(email) {
   return Get(Match(Index('accounts_by_email'), email))
 }
 
-function VerifyAccountExists(email) {
+export function VerifyAccountExists(email) {
   return Exists(Match(Index('accounts_by_email'), email))
 }
 

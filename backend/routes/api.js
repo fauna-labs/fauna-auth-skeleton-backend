@@ -8,7 +8,8 @@ import {
   getRefreshErrorCode,
   handleLoginError,
   handleRegisterError,
-  handleResetError
+  handleResetError,
+  handleVerificationError
 } from './api-errors'
 import { refreshTokenUsed } from '../../fauna-queries/helpers/errors'
 import { sendPasswordResetEmail, sendAccountVerificationEmail } from './../util/emails'
@@ -42,6 +43,10 @@ router.post('/login', function(req, res, next) {
     .then(faunaRes => {
       // Either we return a custom error
       if (faunaRes.code) {
+        return res.json(faunaRes)
+      }
+      // Or simply fail if false
+      else if (!faunaRes) {
         return res.json(faunaRes)
       }
       // Or we succeed with the login and can receive a set of tokens.
@@ -170,6 +175,35 @@ router.post('/logout', async function(req, res) {
     console.error('Error logging out', error)
     return res.json({ error: 'could not log out' })
   }
+})
+
+// **** Verify *****
+router.post('/accounts/verify', async function(req, res) {
+  res.status(200)
+  const client = new fauna.Client({
+    secret: process.env.BOOTSTRAP_KEY
+  })
+
+  const { email } = req.body
+
+  return client
+    .query(Call('get_account_verification_token_by_email', email))
+    .then(faunaRes => {
+      const environment = process.argv[2]
+      // If environment is anything but production we use mailtrap to 'fake' sending e-mails.
+      if (environment !== 'prod') {
+        sendAccountVerificationEmail(email, faunaRes.secret)
+      } else {
+        // In production, use a real e-mail service.
+        // There are many options to implement e-mailing, each of them are a bit cumbersome
+        // for a local setup since they need to make sure that users don't use their services
+        // to send spam e-mails. This is outside of the scope of this article but you have the choice of:
+        // Nodemailer (with gmail or anything like that), Mailgun, SparkPost, or Amazon SES, Mandrill, Twilio SendGrid.
+        // .... < your implementation > ....
+      }
+      return res.json(true)
+    })
+    .catch(() => handleVerificationError(res))
 })
 
 // **** Reset *****

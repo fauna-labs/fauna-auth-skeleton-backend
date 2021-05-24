@@ -1,0 +1,12 @@
+CreateRole({
+  name: "reset-token-role",
+  membership: [{
+    resource: Collection("password_reset_request")
+  }],
+  privileges: [{
+    resource: Function("reset_password"),
+    actions: {
+      call: true
+    }
+  }]
+})

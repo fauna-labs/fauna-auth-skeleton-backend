@@ -28,7 +28,16 @@ export function reset(email) {
 }
 
 export function changePassword(password, token) {
-  return postData(urljoin(process.env.REACT_APP_LOCAL___API, 'api', 'accounts/password/reset'), { password, token })
+  return postData(urljoin(process.env.REACT_APP_LOCAL___API, 'api', 'accounts/password/reset'), {
+    password,
+    token
+  })
+}
+
+export function sendVerificationEmail(email) {
+  return postData(urljoin(process.env.REACT_APP_LOCAL___API, 'api', 'accounts/verify'), {
+    email
+  })
 }
 
 async function postData(url, data = {}) {

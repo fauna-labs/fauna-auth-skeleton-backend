@@ -13,6 +13,12 @@ export const sessionReducer = (state, action) => {
     case 'logout': {
       return { user: null }
     }
+    case 'error': {
+      return { user: null, error: action.error, data: action.data }
+    }
+    case 'verified': {
+      return { user: null, error: null, data: null }
+    }
     default: {
       throw new Error(`Unhandled action type: ${action.type}`)
     }

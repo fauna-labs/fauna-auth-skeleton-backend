@@ -13,14 +13,39 @@ const handleLogin = (event, username, password, history, sessionContext) => {
   faunaAPI
     .login(username, password)
     .then(res => {
+      console.log('Login result', res)
       if (res.code === 'ACCOUNT_NOT_VERIFIED') {
-        toast.warn('Please verify your email first')
+        sessionContext.dispatch({
+          type: 'error',
+          error: 'ACCOUNT_NOT_VERIFIED',
+          data: { username: username }
+        })
       } else if (res === false) {
         toast.error('Login failed')
       } else {
         toast.success('Login successful')
         history.push('/')
       }
+    })
+    .catch(e => {
+      if (e.error) {
+        toast.error(e.error)
+      } else {
+        console.log(e)
+        toast.error('Oops, something went wrong')
+      }
+    })
+
+  event.preventDefault()
+}
+
+const handleResendVerification = (event, sessionContext) => {
+  const { data } = sessionContext.state
+
+  faunaAPI
+    .sendVerificationEmail(data.username)
+    .then(res => {
+      toast.success('Verification email sent')
     })
     .catch(e => {
       if (e.error) {
@@ -41,8 +66,20 @@ const Login = props => {
     toast.error(queryParams.error)
   }
   const sessionContext = useContext(SessionContext)
-  const { user } = sessionContext.state
-  if (!user) {
+  const { user, error } = sessionContext.state
+  if (error && error === 'ACCOUNT_NOT_VERIFIED') {
+    return (
+      <div className="form-container">
+        <div className="form-title"> Login </div>
+        <div className="form-text">
+          Please verify your account first. Click here to
+          <a href="#" onClick={event => handleResendVerification(event, sessionContext)}>
+            resend the email verification.
+          </a>
+        </div>
+      </div>
+    )
+  } else if (!user) {
     return (
       <Form
         title="Login"

@@ -24,12 +24,26 @@ const Form = props => {
         {props.formType !== 'change_password'
           ? renderInputField('Email', username, 'text', e => handleChangeUserName(e), 'username')
           : null}
-        {props.formType === 'register' || props.formType === 'login' || props.formType === 'change_password'
-          ? renderInputField('Password', password, 'password', e => handleChangePassword(e), 'current-password')
+        {props.formType === 'register' ||
+        props.formType === 'login' ||
+        props.formType === 'change_password'
+          ? renderInputField(
+              'Password',
+              password,
+              'password',
+              e => handleChangePassword(e),
+              'current-password'
+            )
           : null}
 
         {props.formType === 'change_password'
-          ? renderInputField('Repeat', rpassword, 'password', e => handleChangeRepeatedPassword(e), 'current-password')
+          ? renderInputField(
+              'Repeat',
+              rpassword,
+              'password',
+              e => handleChangeRepeatedPassword(e),
+              'current-password'
+            )
           : null}
       </React.Fragment>
     )
