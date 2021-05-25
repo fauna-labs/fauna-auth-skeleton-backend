@@ -18,6 +18,12 @@ CreateRole({
       actions: {
         call: true
       }
+    },
+    {
+      resource: Function('request_password_reset'),
+      actions: {
+        call: true
+      }
     }
   ]
 })

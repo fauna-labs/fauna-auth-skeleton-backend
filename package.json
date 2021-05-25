@@ -17,10 +17,7 @@
     "postinstall": "cd frontend && npm install && cd ../fauna-queries && npm install && cd ../backend && npm install && cd ..",
     "start": "concurrently --handle-input \"npm run start_backend\" \"npm run start_frontend\"",
     "start_frontend": "cd frontend && npm run start",
-    "start_backend": "cd backend && npm run start",
-    "setup": "cd fauna-queries && npm run setup",
-    "destroy": "cd fauna-queries && npm run destroy",
-    "update-functions": "cd fauna-queries && npm run update-functions"
+    "start_backend": "cd backend && npm run start"
   },
   "devDependencies": {
     "concurrently": "^5.3.0",

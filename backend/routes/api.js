@@ -80,18 +80,7 @@ router.post('/register', function(req, res, next) {
   return client
     .query(Call('register_with_verification', email, password))
     .then(faunaRes => {
-      const environment = process.argv[2]
-      // If environment is anything but production we use mailtrap to 'fake' sending e-mails.
-      if (environment !== 'prod') {
-        sendAccountVerificationEmail(email, faunaRes.verificationToken.secret)
-      } else {
-        // In production, use a real e-mail service.
-        // There are many options to implement e-mailing, each of them are a bit cumbersome
-        // for a local setup since they need to make sure that users don't use their services
-        // to send spam e-mails. This is outside of the scope of this article but you have the choice of:
-        // Nodemailer (with gmail or anything like that), Mailgun, SparkPost, or Amazon SES, Mandrill, Twilio SendGrid.
-        // .... < your implementation > ....
-      }
+      sendAccountVerificationEmail(email, faunaRes.verificationToken.secret)
       return res.json(faunaRes)
     })
     .catch(err => handleRegisterError(err, res))
@@ -194,19 +183,8 @@ router.post('/accounts/verify', async function(req, res) {
   return client
     .query(Call('get_account_verification_token_by_email', email))
     .then(faunaRes => {
-      const environment = process.argv[2]
-      // If environment is anything but production we use mailtrap to 'fake' sending e-mails.
       if (faunaRes) {
-        if (environment !== 'prod') {
-          sendAccountVerificationEmail(email, faunaRes.secret)
-        } else {
-          // In production, use a real e-mail service.
-          // There are many options to implement e-mailing, each of them are a bit cumbersome
-          // for a local setup since they need to make sure that users don't use their services
-          // to send spam e-mails. This is outside of the scope of this article but you have the choice of:
-          // Nodemailer (with gmail or anything like that), Mailgun, SparkPost, or Amazon SES, Mandrill, Twilio SendGrid.
-          // .... < your implementation > ....
-        }
+        sendAccountVerificationEmail(email, faunaRes.secret)
       }
       // provide no information to the enduser unless on internal errors.
       return res.json(true)
@@ -231,17 +209,10 @@ function requestPasswordReset(req, res) {
     secret: process.env.BOOTSTRAP_KEY
   })
   return client
-    .query(Call(q.Function('request_reset'), email))
+    .query(Call(q.Function('request_password_reset'), email))
     .then(faunaRes => {
-      const environment = process.argv[2]
-      // If environment is anything but production we use mailtrap to 'fake' sending e-mails.
-      if (environment !== 'prod') {
-        sendPasswordResetEmail(email, faunaRes.secret)
-      } else {
-        // In production, use a real e-mail service such as
-        // Nodemailer , Mailgun, SparkPost, or Amazon SES, Mandrill, Twilio SendGrid.
-        // .... < your implementation > ....
-      }
+      console.log(faunaRes, email)
+      sendPasswordResetEmail(email, faunaRes.secret)
       return res.json({ ok: true })
     })
     .catch(err => handleResetError(err, res))
@@ -254,10 +225,10 @@ function executePasswordReset(req, res) {
   })
 
   return client
-    .query(Call('change_password', password))
+    .query(Call('reset_password', password))
     .then(faunaRes => {
       res.status(200)
-      res.redirect(urljoin(process.env.FRONTEND_DOMAIN, 'accounts/login'))
+      return res.json({ ok: true })
     })
     .catch(err => {
       console.error(err)

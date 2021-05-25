@@ -28,15 +28,15 @@ const handleLogout = (event, faunaQueryFun, history, sessionContext) => {
 const Logout = props => {
   const history = useHistory()
   const sessionContext = useContext(SessionContext)
-  const { user } = sessionContext.state
+  const { loggedIn } = sessionContext.state
 
-  if (user) {
+  if (loggedIn) {
     return (
       <div className="form-container">
         <div className="form-title"> Logout </div>
         <div className="form-text">
-          Clicking logout will remove the session which essentially removes the token from the client and reverts to the
-          bootstrap token. After logging out, we can login again.
+          Clicking logout will remove the session which essentially removes the token from the
+          client and reverts to the bootstrap token. After logging out, we can login again.
         </div>
         <div className="form">
           <div className="input-row margin-top-50">

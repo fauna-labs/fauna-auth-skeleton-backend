@@ -21,20 +21,20 @@ export function refreshToken() {
 
 // Calling the reset endpoint which will run the password reset from the backend
 // which will send a reset email containing the reset token.
-export function reset(email) {
+export function requestReset(email) {
   return postData(urljoin(process.env.REACT_APP_LOCAL___API, 'api', 'accounts/password/reset'), {
     email
   })
 }
 
-export function changePassword(password, token) {
+export function resetPassword(password, token) {
   return postData(urljoin(process.env.REACT_APP_LOCAL___API, 'api', 'accounts/password/reset'), {
     password,
     token
   })
 }
 
-export function sendVerificationEmail(email) {
+export function resendVerificationEmail(email) {
   return postData(urljoin(process.env.REACT_APP_LOCAL___API, 'api', 'accounts/verify'), {
     email
   })

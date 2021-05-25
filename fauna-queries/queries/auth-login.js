@@ -1,4 +1,4 @@
-import fauna from 'faunadb'
+import fauna, { CurrentIdentity } from 'faunadb'
 import { CreateAccessAndRefreshToken } from './auth-tokens'
 import { VerifyUserLocked } from './auth-refresh'
 
@@ -13,7 +13,6 @@ const {
   Paginate,
   Identify,
   If,
-  Identity,
   Logout,
   Lambda,
   Delete,
@@ -83,7 +82,7 @@ function LogoutCurrentSession() {
   return Let(
     {
       // Get the session (this function is called from the backend using the refresh token)
-      sessionRef: Identity(),
+      sessionRef: CurrentIdentity(),
       accessTokens: Match(Index('access_tokens_by_session'), Var('sessionRef'))
     },
     {
@@ -92,7 +91,9 @@ function LogoutCurrentSession() {
       sessionLoggedOut: Logout(false), // this logs out the session token
       // while when we delete something with 'Delete' it would return the deleted object on success.
       // we'll modify that and just return a count of how many tokens that were deleted.
-      accountLoggedOut: DeleteAllAndCount(Select(['data'], Paginate(Var('accessTokens'), { size: 100000 })))
+      accountLoggedOut: DeleteAllAndCount(
+        Select(['data'], Paginate(Var('accessTokens'), { size: 100000 }))
+      )
     }
   )
 }
@@ -101,12 +102,14 @@ function LogoutAllSessions() {
   return Let(
     {
       // Get the session (this function is called from the backend using the refresh token)
-      sessionRef: Identity(),
+      sessionRef: CurrentIdentity(),
       session: Get(Var('sessionRef')),
       accountRef: Select(['data', 'account'], Var('session')),
       allAccountTokens: Match(Index('tokens_by_instance'), Var('accountRef')),
       // there might be other sessions for this account (other devices)
-      allSessions: Paginate(Match(Index('account_sessions_by_account'), Var('accountRef')), { size: 100000 }),
+      allSessions: Paginate(Match(Index('account_sessions_by_account'), Var('accountRef')), {
+        size: 100000
+      }),
       allRefreshTokens: q.Map(
         Var('allSessions'),
         Lambda(

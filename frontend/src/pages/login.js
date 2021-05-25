@@ -41,9 +41,9 @@ const Login = props => {
     toast.error(queryParams.error)
   }
   const sessionContext = useContext(SessionContext)
-  const { user } = sessionContext.state
+  const { loggedIn } = sessionContext.state
 
-  if (!user) {
+  if (!loggedIn) {
     return (
       <Form
         title="Login"

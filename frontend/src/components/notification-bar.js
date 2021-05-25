@@ -10,7 +10,7 @@ const NotificationBar = props => {
 
   const handleResendVerification = event => {
     faunaAPI
-      .sendVerificationEmail(user.email)
+      .resendVerificationEmail(user.email)
       .then(res => {
         toast.success('Verification email sent')
       })

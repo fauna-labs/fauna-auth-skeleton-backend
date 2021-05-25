@@ -5,6 +5,7 @@ const Form = props => {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [rpassword, setRPassword] = useState('')
+  const [currentpassword, setCurrentPassword] = useState('')
 
   const handleChangeUserName = event => {
     setUsername(event.target.value)
@@ -18,32 +19,32 @@ const Form = props => {
     setRPassword(event.target.value)
   }
 
+  const handleChangeCurrentPassword = event => {
+    setCurrentPassword(event.target.value)
+  }
+
   function renderFields() {
     return (
       <React.Fragment>
-        {props.formType !== 'change_password'
+        {props.formType !== 'reset_password' && props.formType !== 'change_password'
           ? renderInputField('Email', username, 'text', e => handleChangeUserName(e), 'username')
-          : null}
-        {props.formType === 'register' ||
-        props.formType === 'login' ||
-        props.formType === 'change_password'
-          ? renderInputField(
-              'Password',
-              password,
-              'password',
-              e => handleChangePassword(e),
-              'current-password'
-            )
           : null}
 
         {props.formType === 'change_password'
-          ? renderInputField(
-              'Repeat',
-              rpassword,
-              'password',
-              e => handleChangeRepeatedPassword(e),
-              'current-password'
+          ? renderInputField('Current', currentpassword, 'password', e =>
+              handleChangeCurrentPassword(e)
             )
+          : null}
+
+        {props.formType === 'register' ||
+        props.formType === 'login' ||
+        props.formType === 'reset_password' ||
+        props.formType === 'change_password'
+          ? renderInputField('Password', password, 'password', e => handleChangePassword(e))
+          : null}
+
+        {props.formType === 'reset_password' || props.formType === 'change_password'
+          ? renderInputField('Repeat', rpassword, 'password', e => handleChangeRepeatedPassword(e))
           : null}
       </React.Fragment>
     )
@@ -51,7 +52,10 @@ const Form = props => {
 
   function renderForm() {
     return (
-      <form className="form" onSubmit={e => props.handleSubmit(e, username, password, rpassword)}>
+      <form
+        className="form"
+        onSubmit={e => props.handleSubmit(e, username, password, rpassword, currentpassword)}
+      >
         {renderFields()}
         <div className="input-row margin-top-50">
           <button className={props.formType + ' align-right'}> {props.formType} </button>

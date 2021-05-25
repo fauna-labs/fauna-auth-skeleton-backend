@@ -2,14 +2,29 @@ import faunadb from 'faunadb'
 import { CreatePasswordResetToken, InvalidateResetTokens } from './password-reset-tokens'
 
 const q = faunadb.query
-const { If, Exists, Let, Match, Index, Var, Select, Paginate, Get, CurrentIdentity, Update, Do, Delete, CurrentToken } = q
+const {
+  If,
+  Exists,
+  Let,
+  Match,
+  Index,
+  Var,
+  Select,
+  Paginate,
+  Get,
+  CurrentIdentity,
+  Update,
+  Do,
+  Delete,
+  CurrentToken
+} = q
 
 export const ACCOUNT_NOT_FOUND = {
   code: 'ACCOUNT_NOT_FOUND',
   message: 'The account was not found'
 }
 
-function RequestPasswordReset (email, lifetimeSecs) {
+function RequestPasswordReset(email, lifetimeSecs) {
   return If(
     Exists(Match(Index('accounts_by_email'), email)),
     Let(
@@ -25,7 +40,7 @@ function RequestPasswordReset (email, lifetimeSecs) {
   )
 }
 
-function ResetPassword (password) {
+function ResetPassword(password) {
   // The token that is used to change the password belongs to a document from the
   // Collection('password_reset_request'), therefore the CurrentIdentity() reference will point to such a doc.
   // When we created the document we saved the account to it.
@@ -35,10 +50,7 @@ function ResetPassword (password) {
       accountRef: Select(['data', 'account'], Var('resetRequest')),
       account: Update(Var('accountRef'), { credentials: { password: password } })
     },
-    Do(
-      Delete(CurrentToken()),
-      Var('account')
-    )
+    Do(Delete(CurrentToken()), Var('account'))
   )
 }
 

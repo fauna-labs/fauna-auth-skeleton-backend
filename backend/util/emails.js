@@ -28,7 +28,7 @@ export const sendPasswordResetEmail = (email, resetToken) => {
     `
   }
 
-  return sendMailTrapEmail(content)
+  return sendEmail(content)
 }
 
 export const sendAccountVerificationEmail = (email, verifyToken) => {
@@ -54,7 +54,22 @@ export const sendAccountVerificationEmail = (email, verifyToken) => {
     `
   }
 
-  return sendMailTrapEmail(content)
+  return sendEmail(content)
+}
+
+const sendEmail = mailContent => {
+  const environment = process.argv[2]
+  // If environment is anything but production we use mailtrap to 'fake' sending e-mails.
+  if (environment !== 'prod') {
+    sendMailTrapEmail(mailContent)
+  } else {
+    // In production, use a real e-mail service.
+    // There are many options to implement e-mailing, each of them are a bit cumbersome
+    // for a local setup since they need to make sure that users don't use their services
+    // to send spam e-mails. This is outside of the scope of this article but you have the choice of:
+    // Nodemailer (with gmail or anything like that), Mailgun, SparkPost, or Amazon SES, Mandrill, Twilio SendGrid.
+    // .... < your implementation > ....
+  }
 }
 
 const sendMailTrapEmail = mailContent => {
@@ -68,12 +83,7 @@ const sendMailTrapEmail = mailContent => {
     }
   })
 
-  return transport
-    .sendMail(mailContent)
-    .then((error, info) => {
-      console.log(error, info)
-    })
-    .catch(err => {
-      console.error(err)
-    })
+  return transport.sendMail(mailContent).catch(err => {
+    console.error(err)
+  })
 }

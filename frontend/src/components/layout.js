@@ -38,23 +38,28 @@ const Layout = props => {
 
   useEffect(
     () => {
-      console.log('INFO - First page load, retrieving session')
-      faunaAPI
-        .refreshToken()
-        .then(res => {
-          if (!res.error) {
-            console.log('INFO - Session found, logging in')
-            sessionContext.dispatch({ type: 'login', data: res.account.data })
-          } else {
-            console.log('INFO - There is no session')
-            history.push('/accounts/login')
-          }
-          setLoading(false)
-        })
-        .catch(err => {
-          console.log(err)
-          setLoading(false)
-        })
+      console.log(location)
+      if (location.pathname.includes('reset') || location.pathname.includes('verify')) {
+        setLoading(false)
+      } else {
+        console.log('INFO - First page load, retrieving session', location)
+        faunaAPI
+          .refreshToken()
+          .then(res => {
+            if (!res.error) {
+              console.log('INFO - Session found, logging in')
+              sessionContext.dispatch({ type: 'login', data: res.account.data })
+            } else {
+              console.log('INFO - There is no session')
+              history.push('/accounts/login')
+            }
+            setLoading(false)
+          })
+          .catch(err => {
+            console.log(err)
+            setLoading(false)
+          })
+      }
     },
     [
       // run only once

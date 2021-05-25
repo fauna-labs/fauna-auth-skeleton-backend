@@ -26,6 +26,14 @@ class FaunaAPI {
     return await backendAPI.logout()
   }
 
+  async requestReset(username) {
+    return await backendAPI.requestReset(username)
+  }
+
+  async resetPassword(username, token) {
+    return await backendAPI.resetPassword(username, token)
+  }
+
   async refreshToken() {
     return await backendAPI.refreshToken().then(res => {
       this.client = this.getClient(res.secret)
@@ -33,18 +41,22 @@ class FaunaAPI {
     })
   }
 
-  async sendVerificationEmail(email) {
-    return await backendAPI.sendVerificationEmail(email)
+  async resendVerificationEmail(email) {
+    return await backendAPI.resendVerificationEmail(email)
   }
 
   /** ******* Calls directly to Fauna*********/
+  async changePassword(oldPassword, newPassword) {
+    return this.client.query(Call('change_password', oldPassword, newPassword))
+  }
+
   async verifyEmail(token) {
     const verificationClient = this.getClient(token)
     return verificationClient.query(Call('verify_account'))
   }
 
-  async getDinos(user, loggedin) {
-    if (loggedin && user && user.verified) {
+  async getDinos(user, loggedIn) {
+    if (loggedIn && user && user.verified) {
       console.log('INFO - Retrieving dinos for logged in user with retry')
       return await this.callWithRefreshRetry(() => this.client.query(Call('get_all_dinos')))
     } else {
