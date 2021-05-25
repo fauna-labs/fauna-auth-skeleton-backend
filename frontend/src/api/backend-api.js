@@ -27,13 +27,6 @@ export function requestReset(email) {
   })
 }
 
-export function resetPassword(password, token) {
-  return postData(urljoin(process.env.REACT_APP_LOCAL___API, 'api', 'accounts/password/reset'), {
-    password,
-    token
-  })
-}
-
 export function resendVerificationEmail(email) {
   return postData(urljoin(process.env.REACT_APP_LOCAL___API, 'api', 'accounts/verify'), {
     email

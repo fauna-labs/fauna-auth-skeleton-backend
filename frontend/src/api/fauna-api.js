@@ -30,10 +30,6 @@ class FaunaAPI {
     return await backendAPI.requestReset(username)
   }
 
-  async resetPassword(username, token) {
-    return await backendAPI.resetPassword(username, token)
-  }
-
   async refreshToken() {
     return await backendAPI.refreshToken().then(res => {
       this.client = this.getClient(res.secret)
@@ -53,6 +49,11 @@ class FaunaAPI {
   async verifyEmail(token) {
     const verificationClient = this.getClient(token)
     return verificationClient.query(Call('verify_account'))
+  }
+
+  async resetPassword(password, token) {
+    const resetClient = this.getClient(token)
+    return resetClient.query(Call('reset_password', password))
   }
 
   async getDinos(user, loggedIn) {

@@ -8,6 +8,7 @@ import parseQuery from './../util/parse-query'
 
 // Components
 import Form from '../components/form'
+import { handleChangePasswordError } from '../api/fauna-api-errors'
 
 const Reset = props => {
   const history = useHistory()
@@ -32,9 +33,7 @@ const Reset = props => {
             toast.error('wrong password')
           }
         })
-        .catch(e => {
-          toast.error('Oops, something went wrong')
-        })
+        .catch(err => handleChangePasswordError(err, toast))
     }
   }
 
@@ -66,16 +65,10 @@ const Reset = props => {
       faunaAPI
         .resetPassword(password, queryParams.token)
         .then(res => {
-          if (res.error) {
-            toast.error('Password change failed')
-          } else {
-            toast.success('password changed!')
-            history.push('/')
-          }
+          toast.success('password changed!')
+          history.push('/accounts/login')
         })
-        .catch(e => {
-          toast.error('Oops, something went wrong')
-        })
+        .catch(err => handleChangePasswordError(err, toast))
     }
   }
 

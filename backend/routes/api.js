@@ -196,11 +196,7 @@ router.post('/accounts/verify', async function(req, res) {
 router.post('/accounts/password/reset', function(req, res, next) {
   res.status(200)
   // if there is an email parameter we are initiating the request.
-  if (req.body.email) {
-    requestPasswordReset(req, res)
-  } else {
-    executePasswordReset(req, res)
-  }
+  requestPasswordReset(req, res)
 })
 
 function requestPasswordReset(req, res) {
@@ -216,24 +212,6 @@ function requestPasswordReset(req, res) {
       return res.json({ ok: true })
     })
     .catch(err => handleResetError(err, res))
-}
-
-function executePasswordReset(req, res) {
-  const { password, token } = req.body
-  const client = new fauna.Client({
-    secret: token
-  })
-
-  return client
-    .query(Call('reset_password', password))
-    .then(faunaRes => {
-      res.status(200)
-      return res.json({ ok: true })
-    })
-    .catch(err => {
-      console.error(err)
-      return res.json({ error: 'could not reset password' })
-    })
 }
 
 module.exports = router

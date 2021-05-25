@@ -5,8 +5,8 @@ import Loading from '../components/loading'
 // import SessionContext from '../context/session'
 import { faunaAPI } from '../api/fauna-api'
 import { toast } from 'react-toastify'
-import { safeVerifyError } from '../../../fauna-queries/helpers/errors'
 import SessionContext from '../context/session'
+import { handleLoadingError } from '../api/fauna-api-errors'
 
 const Verify = () => {
   const [loading, setLoading] = useState(false)
@@ -24,7 +24,7 @@ const Verify = () => {
         sessionContext.dispatch({ type: 'verify', data: res.data })
         toast.info('Account verified')
       })
-      .catch(err => handleLoadingError(err, setLoading, setError))
+      .catch(err => handleLoadingError(err, setLoading, setError, toast))
   }, [setLoading, setError])
 
   if (loading) {
@@ -43,18 +43,6 @@ const Verify = () => {
         </div>
       </div>
     )
-  }
-}
-
-function handleLoadingError(err, setLoading, setError) {
-  const errorAndCode = safeVerifyError(err, ['responseContent', 'errors', 0])
-  if (errorAndCode.code === 'unauthorized') {
-    toast.warn('Verification token no longer valid')
-    setLoading(false)
-  } else {
-    toast.error(err.description)
-    setLoading(false)
-    setError(true)
   }
 }
 

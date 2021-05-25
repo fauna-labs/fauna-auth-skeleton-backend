@@ -2,7 +2,7 @@ import fauna from 'faunadb'
 import { LoginAccount, VerifyAccountExists } from '../../src/login'
 
 const q = fauna.query
-const { Query, Lambda, CreateFunction, Var, If, Call, Abort } = q
+const { Query, Lambda, CreateFunction, Var, If } = q
 
 export default CreateFunction({
   name: 'login',
