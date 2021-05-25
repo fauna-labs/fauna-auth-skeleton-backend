@@ -4,7 +4,8 @@ const { Do, Create, Collection, CurrentToken, CurrentIdentity } = q
 
 export const REFRESH_TOKEN_REUSE_ERROR = {
   code: 'REFRESH_TOKEN_REUSE',
-  message: 'The refresh token was used outside of the grace period which indicates that it was leaked'
+  message:
+    'The refresh token was used outside of the grace period which indicates that it was leaked'
 }
 
 export const REFRESH_TOKEN_EXPIRED = {

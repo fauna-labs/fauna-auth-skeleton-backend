@@ -11,7 +11,6 @@ import {
   handleResetError,
   handleVerificationError
 } from './api-errors'
-import { refreshTokenUsed } from '../../fauna-queries/helpers/errors'
 import { sendPasswordResetEmail, sendAccountVerificationEmail } from './../util/emails'
 import { resetExpressSession, setExpressSession } from './api-helpers'
 import {
@@ -106,41 +105,42 @@ router.post('/refresh', function(req, res, next) {
     secret: req.session.refreshToken
   })
 
+  const attemptRefresh = () => {
+    return client.query(Call(q.Function('refresh'))).then(faunaRes => {
+      refreshHandler(faunaRes)
+    })
+  }
+
   const refreshHandler = faunaRes => {
-    if (faunaRes.error && faunaRes.error === refreshTokenUsed) {
-      resetExpressSession(req)
-      return res.status(200).send({ error: refreshTokenUsed })
+    if (faunaRes.code) {
+      refreshErrorHandler(faunaRes)
     } else {
       setExpressSession(req, faunaRes)
-      return res.json({ secret: faunaRes.access.secret, account: faunaRes.account })
+      return res.json({ secret: faunaRes.tokens.access.secret, account: faunaRes.account })
     }
+  }
+
+  const refreshErrorHandler = err => {
+    res.status(401)
+    console.log('INFO - Session - Refresh failed after retry', err)
+    res.json({ error: 'no session' })
   }
 
   if (req.session.accessToken) {
     var ageSeconds = (new Date().getTime() - new Date(req.session.created).getTime()) / 1000
     if (ageSeconds < ACCESS_TOKEN_LIFETIME_SECONDS / 2) {
+      console.log('INFO - Session - There is an active session with still valid token')
       return res.json({ secret: req.session.accessToken, account: req.session.account })
     } else {
-      return client
-        .query(Call(q.Function('refresh_token')))
-        .then(faunaRes => {
-          refreshHandler(faunaRes)
-        })
-        .catch(err => {
-          const refreshErrorCode = getRefreshErrorCode(err)
-          if (refreshErrorCode === 'instance not found') {
-            client
-              .query(Call(q.Function('refresh_token')))
-              .then(faunaRes => {
-                refreshHandler(faunaRes)
-              })
-              .catch(err => {
-                console.log('refresh failed', err)
-              })
-          } else {
-            return res.json({ error: 'could not verify token' })
-          }
-        })
+      console.log('INFO - Session - Access token is too old, refreshing')
+      return attemptRefresh().catch(err => {
+        const refreshErrorCode = getRefreshErrorCode(err)
+        if (refreshErrorCode === 'instance not found') {
+          attemptRefresh().catch(refreshErrorHandler)
+        } else {
+          refreshErrorHandler()
+        }
+      })
     }
   } else {
     console.log('INFO - Session - there is no session active, cant refresh')
@@ -164,17 +164,15 @@ router.post('/logout', async function(req, res) {
       const client = new fauna.Client({
         secret: refreshToken
       })
-      let res = null
       if (logoutAllTokens) {
-        res = await client
-          .query(Call(q.Function('logout', true)))
+        await client
+          .query(Call(q.Function('logout'), true))
           .catch(err => console.log('Error logging out all sessions (access and refresh)', err))
       } else {
-        res = await client
-          .query(Call(q.Function('logout', false)))
+        await client
+          .query(Call(q.Function('logout'), false))
           .catch(err => console.log('Error logging out current session (access and refresh)', err))
       }
-      console.log('logout result', JSON.stringify(res, null, 2))
     }
     resetExpressSession(req)
     return res.json({ logout: true })

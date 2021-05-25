@@ -32,10 +32,10 @@ const {
   Not
 } = q
 
-export const ACCESS_TOKEN_LIFETIME_SECONDS = 600 // 10 minutes
+export const ACCESS_TOKEN_LIFETIME_SECONDS = 10 // 10 minutes
 // lifetome of the token makes the refresh token unusable after this lifetime since
 // the code explicitely checks that lifetime before allowing a refresh token to refresh.
-export const REFRESH_TOKEN_LIFETIME_SECONDS = 28800 // 8 hours
+export const REFRESH_TOKEN_LIFETIME_SECONDS = 20 // 8 hours
 // reclaim time deletes the token which makes it unable to detect leaked tokens.
 // which is why it is set rather high.
 export const REFRESH_TOKEN_RECLAIMTIME_SECONDS = 604800 // 1 week

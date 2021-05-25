@@ -24,6 +24,7 @@ $border-radius-round: calc( #{$grid-unit} / 1.5);
 @import "./components/button";
 @import "./components/form";
 @import "./components/layout";
+@import "./components/notification-bar";
 
 @import "./pages/home";
 

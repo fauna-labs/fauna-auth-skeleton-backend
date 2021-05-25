@@ -23,9 +23,7 @@ class FaunaAPI {
   }
 
   async logout(all) {
-    return await backendAPI.logout().then(res => {
-      console.log('Logout result of API', res)
-    })
+    return await backendAPI.logout()
   }
 
   async refreshToken() {
@@ -45,13 +43,14 @@ class FaunaAPI {
     return verificationClient.query(Call('verify_account'))
   }
 
-  async getDinos() {
-    return await this.callWithRefreshRetry(() => this.client.query(Call('get_all_dinos'))).catch(
-      err => {
-        console.log('huh?')
-        console.log('error fetching dinos', err)
-      }
-    )
+  async getDinos(user, loggedin) {
+    if (loggedin && user && user.verified) {
+      console.log('INFO - Retrieving dinos for logged in user with retry')
+      return await this.callWithRefreshRetry(() => this.client.query(Call('get_all_dinos')))
+    } else {
+      console.log('INFO - Retrieving public dinos')
+      return await this.client.query(Call('get_all_dinos'))
+    }
   }
 
   /** ******* Helpers *********/

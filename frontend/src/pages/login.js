@@ -10,6 +10,7 @@ import parseQuery from './../util/parse-query'
 import Form from '../components/form'
 
 const handleLogin = (event, username, password, history, sessionContext) => {
+  console.log('INFO - Attempting to log in')
   faunaAPI
     .login(username, password)
     .then(res => {
@@ -18,30 +19,8 @@ const handleLogin = (event, username, password, history, sessionContext) => {
       } else {
         toast.success('Login successful')
         sessionContext.dispatch({ type: 'login', data: res.account.data })
-        if (res.account.data.verified) {
-          history.push('/')
-        }
+        history.push('/')
       }
-    })
-    .catch(e => {
-      if (e.error) {
-        toast.error(e.error)
-      } else {
-        console.log(e)
-        toast.error('Oops, something went wrong')
-      }
-    })
-
-  event.preventDefault()
-}
-
-const handleResendVerification = (event, sessionContext) => {
-  const { user } = sessionContext.state
-
-  faunaAPI
-    .sendVerificationEmail(user.email)
-    .then(res => {
-      toast.success('Verification email sent')
     })
     .catch(e => {
       if (e.error) {
@@ -73,18 +52,6 @@ const Login = props => {
           handleLogin(event, username, password, history, sessionContext)
         }
       ></Form>
-    )
-  } else if (!user.verified) {
-    return (
-      <div className="form-container">
-        <div className="form-title"> Login </div>
-        <div className="form-text">
-          Please verify your account first. Click here to
-          <a href="#" onClick={event => handleResendVerification(event, sessionContext)}>
-            resend the email verification.
-          </a>
-        </div>
-      </div>
     )
   } else {
     return (

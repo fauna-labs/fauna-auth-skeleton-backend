@@ -1,6 +1,6 @@
 import React, { useEffect, useContext, useState } from 'react'
 import { useHistory } from 'react-router-dom'
-import Loading from '../components/states/loading'
+import Loading from '../components/loading'
 import { toast } from 'react-toastify'
 
 import { faunaAPI } from '../api/fauna-api'
@@ -8,19 +8,19 @@ import SessionContext from '../context/session'
 
 const Home = () => {
   const [dinos, setDinos] = useState(null)
-  const [loading, setLoading] = useState(false)
+  const [isLoading, setLoading] = useState(false)
   const history = useHistory()
   const sessionContext = useContext(SessionContext)
-  const { user } = sessionContext.state
+  const { user, loggedin } = sessionContext.state
 
   useEffect(() => {
-    getDinos(setLoading, setDinos).catch(err =>
+    getDinos(user, loggedin, setLoading, setDinos).catch(err =>
       handleLoadingError(err, user, sessionContext, setLoading)
     )
   }, [user, history, sessionContext])
 
-  if (loading) {
-    return Loading()
+  if (isLoading) {
+    return Loading(isLoading)
   } else if (dinos && dinos.data.length) {
     return (
       <React.Fragment>
@@ -38,16 +38,22 @@ const Home = () => {
   }
 }
 
-async function getDinos(setLoading, setDinos) {
-  setLoading(true)
-  return faunaAPI.getDinos().then(res => {
-    if (!res.error) {
-      setDinos(res)
+async function getDinos(user, loggedin, setLoading, setDinos) {
+  setLoading('data')
+  return faunaAPI
+    .getDinos(user, loggedin)
+    .then(res => {
+      if (!res.error) {
+        setDinos(res)
+        setLoading(false)
+      } else {
+        setLoading(false)
+      }
+    })
+    .catch(err => {
+      console.error('Error fetching dinos', err)
       setLoading(false)
-    } else {
-      setLoading(false)
-    }
-  })
+    })
 }
 
 function handleLoadingError(err, user, sessionContext, setLoading) {
