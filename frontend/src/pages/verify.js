@@ -1,29 +1,24 @@
-import React, { useState, useEffect, useContext } from 'react'
-import { useParams, useHistory } from 'react-router-dom'
+import React, { useState, useEffect } from 'react'
+import { useParams } from 'react-router-dom'
 
 import Loading from '../components/states/loading'
 // import SessionContext from '../context/session'
 import { faunaAPI } from '../api/fauna-api'
 import { toast } from 'react-toastify'
 import { safeVerifyError } from '../../../fauna-queries/helpers/errors'
-import SessionContext from './../context/session'
 
 const Verify = () => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(false)
   const { verification } = useParams()
-  const history = useHistory()
-  const sessionContext = useContext(SessionContext)
 
   useEffect(() => {
     setLoading(true)
     faunaAPI
       .verifyEmail(verification)
       .then(res => {
-        sessionContext.dispatch({ type: 'verified' })
         setLoading(false)
         toast.info('Account verified')
-        history.push('/accounts/login')
       })
       .catch(err => handleLoadingError(err, setLoading, setError))
   }, [setLoading, setError])
@@ -32,15 +27,17 @@ const Verify = () => {
     return Loading()
   } else if (error) {
     return (
-      <React.Fragment>
+      <div className="form-container">
         <div> Failed to verify your account</div>
-      </React.Fragment>
+      </div>
     )
   } else {
     return (
-      <React.Fragment>
-        <div> succesfully verified your account</div>
-      </React.Fragment>
+      <div className="form-container">
+        <div>
+          succesfully verified your account, click here to return to <a href="/">home.</a>
+        </div>
+      </div>
     )
   }
 }

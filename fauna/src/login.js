@@ -2,7 +2,7 @@ import fauna from 'faunadb'
 import { CreateAccessAndRefreshToken } from './tokens'
 
 const q = fauna.query
-const { Let, Var, Select, Match, Index, If, Get, Identify, Exists, And } = q
+const { Let, Var, Select, Match, Index, If, Get, Identify, Exists, Call } = q
 
 export function LoginAccount(
   email,

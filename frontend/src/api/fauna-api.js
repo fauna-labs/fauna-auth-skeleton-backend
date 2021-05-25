@@ -30,14 +30,13 @@ class FaunaAPI {
 
   async refreshToken() {
     return await backendAPI.refreshToken().then(res => {
-      console.log('Refresh token result of API', res)
+      this.client = this.getClient(res.secret)
+      return res
     })
   }
 
   async sendVerificationEmail(email) {
-    return await backendAPI.sendVerificationEmail(email).then(res => {
-      console.log('Send Verification email result of API', res)
-    })
+    return await backendAPI.sendVerificationEmail(email)
   }
 
   /** ******* Calls directly to Fauna*********/
@@ -67,7 +66,11 @@ class FaunaAPI {
 
   async refreshAndRetry(queryFun) {
     return this.refreshToken()
-      .then(res => (res ? (this.account = res.account) : queryFun()))
+      .then(res => {
+        if (res) {
+          queryFun()
+        }
+      })
       .catch(err => {
         console.log('error fetching dinos', err)
       })

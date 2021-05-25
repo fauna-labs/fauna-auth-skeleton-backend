@@ -1,0 +1,38 @@
+Update(Function("login"), {
+  body: Query(Lambda(["email", "password"], If(Exists(Match(Index("accounts_by_email"), Var("email"))), If(Identify(Select(["ref"], Get(Match(Index("accounts_by_email"), Var("email")))), Var("password")), Let([{
+    account: Get(Match(Index("accounts_by_email"), Var("email")))
+  }, {
+    accountRef: Select(["ref"], Var("account"))
+  }, {
+    tokens: Let([{
+      refresh: Create(Tokens(), {
+        instance: Var("accountRef"),
+        data: {
+          type: "refresh",
+          used: false,
+          sessionId: If(And(HasCurrentToken(), Equals(Select(["data", "type"], Get(CurrentToken()), false), "refresh")), Select(["data", "sessionId"], Get(CurrentToken())), NewId()),
+          validUntil: TimeAdd(Now(), 28800, "seconds"),
+          loggedOut: false
+        },
+        ttl: TimeAdd(Now(), 604800, "seconds")
+      })
+    }, {
+      access: Create(Tokens(), {
+        instance: Var("accountRef"),
+        data: {
+          type: "access",
+          refresh: Select(["ref"], Var("refresh"))
+        },
+        ttl: TimeAdd(Now(), 600, "seconds")
+      })
+    }], {
+      refresh: Var("refresh"),
+      access: Var("access")
+    })
+  }], {
+    tokens: Var("tokens"),
+    account: Var("account")
+  }), false), false))),
+  role: "admin",
+  data: null
+})

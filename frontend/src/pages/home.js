@@ -41,7 +41,6 @@ const Home = () => {
 async function getDinos(setLoading, setDinos) {
   setLoading(true)
   return faunaAPI.getDinos().then(res => {
-    console.log(res)
     if (!res.error) {
       setDinos(res)
       setLoading(false)

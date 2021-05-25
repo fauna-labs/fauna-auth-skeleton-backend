@@ -42,7 +42,8 @@ export const handleRegisterError = (err, res) => {
   }
 }
 
-export const handleVerificationError = res => {
+export const handleVerificationError = (err, res) => {
+  console.error(err)
   res.status(500).send({ error: 'Oops something went wrong' })
 }
 

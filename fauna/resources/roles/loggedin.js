@@ -2,7 +2,7 @@ import fauna from 'faunadb'
 import { IsCalledWithAccessToken } from '../../src/tokens'
 
 const q = fauna.query
-const { Query, Lambda, Collection, CreateRole } = q
+const { Query, Lambda, Collection, CreateRole, And, Call, Select, Get, Identity } = q
 
 export default CreateRole({
   name: 'loggedin',
@@ -12,7 +12,14 @@ export default CreateRole({
       resource: Collection('accounts'),
       // If the token used is an access token or which we'll use a reusable snippet of FQL
       // returned by 'IsCalledWithAccessToken'
-      predicate: Query(Lambda(ref => IsCalledWithAccessToken()))
+      predicate: Query(
+        Lambda(ref =>
+          And(
+            IsCalledWithAccessToken(),
+            Call('is_verified', Select(['data', 'email'], Get(Identity())))
+          )
+        )
+      )
     }
   ],
   privileges: [

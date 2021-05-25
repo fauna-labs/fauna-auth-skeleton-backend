@@ -14,6 +14,10 @@ import {
 import { refreshTokenUsed } from '../../fauna-queries/helpers/errors'
 import { sendPasswordResetEmail, sendAccountVerificationEmail } from './../util/emails'
 import { resetExpressSession, setExpressSession } from './api-helpers'
+import {
+  ACCESS_TOKEN_LIFETIME_SECONDS,
+  REFRESH_TOKEN_LIFETIME_SECONDS
+} from '../../fauna/src/tokens'
 
 const q = fauna.query
 const { Call } = q
@@ -25,7 +29,7 @@ const corsOptions = {
   optionsSuccessStatus: 200,
   credentials: true,
   allowedHeaders: ['Content-Type, Set-Cookie, *'],
-  maxAge: 600
+  maxAge: REFRESH_TOKEN_LIFETIME_SECONDS * 1000
 }
 
 router.use(cors(corsOptions))
@@ -52,9 +56,9 @@ router.post('/login', function(req, res, next) {
       // Or we succeed with the login and can receive a set of tokens.
       else {
         // Set the refreshToken in the httpOnly cookie.
-        req.session.refreshToken = faunaRes.tokens.refresh.secret
-        req.session.accessToken = faunaRes.tokens.access.secret
-        req.session.account = faunaRes.account
+
+        setExpressSession(req, faunaRes)
+
         // Then we send the ACCESS token to the frontend to be kept in memory (this also needs to happen over https in a production app)
         // To make sure that the frontend can talk to FaunaDB directly. The ACCESS token is short-lived.
         const result = { account: faunaRes.account, secret: faunaRes.tokens.access.secret }
@@ -97,12 +101,11 @@ router.post('/register', function(req, res, next) {
 // **** Refresh *****
 router.post('/refresh', function(req, res, next) {
   res.status(200)
+
   const client = new fauna.Client({
     secret: req.session.refreshToken
   })
-  // First verify whether there is an accessToken.
-  // If there is, we'll try to refresh it
-  // (the refresh token has permissions to verify the acces token)
+
   const refreshHandler = faunaRes => {
     if (faunaRes.error && faunaRes.error === refreshTokenUsed) {
       resetExpressSession(req)
@@ -114,27 +117,31 @@ router.post('/refresh', function(req, res, next) {
   }
 
   if (req.session.accessToken) {
-    console.log('INFO: verifying access token')
-    return client
-      .query(Call(q.Function('refresh_token')))
-      .then(faunaRes => {
-        refreshHandler(faunaRes)
-      })
-      .catch(err => {
-        const refreshErrorCode = getRefreshErrorCode(err)
-        if (refreshErrorCode === 'instance not found') {
-          client
-            .query(Call(q.Function('refresh_token')))
-            .then(faunaRes => {
-              refreshHandler(faunaRes)
-            })
-            .catch(err => {
-              console.log('refresh failed', err)
-            })
-        } else {
-          return res.json({ error: 'could not verify token' })
-        }
-      })
+    var ageSeconds = (new Date().getTime() - new Date(req.session.created).getTime()) / 1000
+    if (ageSeconds < ACCESS_TOKEN_LIFETIME_SECONDS / 2) {
+      return res.json({ secret: req.session.accessToken, account: req.session.account })
+    } else {
+      return client
+        .query(Call(q.Function('refresh_token')))
+        .then(faunaRes => {
+          refreshHandler(faunaRes)
+        })
+        .catch(err => {
+          const refreshErrorCode = getRefreshErrorCode(err)
+          if (refreshErrorCode === 'instance not found') {
+            client
+              .query(Call(q.Function('refresh_token')))
+              .then(faunaRes => {
+                refreshHandler(faunaRes)
+              })
+              .catch(err => {
+                console.log('refresh failed', err)
+              })
+          } else {
+            return res.json({ error: 'could not verify token' })
+          }
+        })
+    }
   } else {
     console.log('INFO - Session - there is no session active, cant refresh')
     res.json({ error: 'no session' })
@@ -191,19 +198,22 @@ router.post('/accounts/verify', async function(req, res) {
     .then(faunaRes => {
       const environment = process.argv[2]
       // If environment is anything but production we use mailtrap to 'fake' sending e-mails.
-      if (environment !== 'prod') {
-        sendAccountVerificationEmail(email, faunaRes.secret)
-      } else {
-        // In production, use a real e-mail service.
-        // There are many options to implement e-mailing, each of them are a bit cumbersome
-        // for a local setup since they need to make sure that users don't use their services
-        // to send spam e-mails. This is outside of the scope of this article but you have the choice of:
-        // Nodemailer (with gmail or anything like that), Mailgun, SparkPost, or Amazon SES, Mandrill, Twilio SendGrid.
-        // .... < your implementation > ....
+      if (faunaRes) {
+        if (environment !== 'prod') {
+          sendAccountVerificationEmail(email, faunaRes.secret)
+        } else {
+          // In production, use a real e-mail service.
+          // There are many options to implement e-mailing, each of them are a bit cumbersome
+          // for a local setup since they need to make sure that users don't use their services
+          // to send spam e-mails. This is outside of the scope of this article but you have the choice of:
+          // Nodemailer (with gmail or anything like that), Mailgun, SparkPost, or Amazon SES, Mandrill, Twilio SendGrid.
+          // .... < your implementation > ....
+        }
       }
+      // provide no information to the enduser unless on internal errors.
       return res.json(true)
     })
-    .catch(() => handleVerificationError(res))
+    .catch(err => handleVerificationError(err, res))
 })
 
 // **** Reset *****

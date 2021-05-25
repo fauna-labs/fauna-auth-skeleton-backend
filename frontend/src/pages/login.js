@@ -13,18 +13,14 @@ const handleLogin = (event, username, password, history, sessionContext) => {
   faunaAPI
     .login(username, password)
     .then(res => {
-      console.log('Login result', res)
-      if (res.code === 'ACCOUNT_NOT_VERIFIED') {
-        sessionContext.dispatch({
-          type: 'error',
-          error: 'ACCOUNT_NOT_VERIFIED',
-          data: { username: username }
-        })
-      } else if (res === false) {
+      if (res === false) {
         toast.error('Login failed')
       } else {
         toast.success('Login successful')
-        history.push('/')
+        sessionContext.dispatch({ type: 'login', data: res.account.data })
+        if (res.account.data.verified) {
+          history.push('/')
+        }
       }
     })
     .catch(e => {
@@ -40,10 +36,10 @@ const handleLogin = (event, username, password, history, sessionContext) => {
 }
 
 const handleResendVerification = (event, sessionContext) => {
-  const { data } = sessionContext.state
+  const { user } = sessionContext.state
 
   faunaAPI
-    .sendVerificationEmail(data.username)
+    .sendVerificationEmail(user.email)
     .then(res => {
       toast.success('Verification email sent')
     })
@@ -66,8 +62,19 @@ const Login = props => {
     toast.error(queryParams.error)
   }
   const sessionContext = useContext(SessionContext)
-  const { user, error } = sessionContext.state
-  if (error && error === 'ACCOUNT_NOT_VERIFIED') {
+  const { user } = sessionContext.state
+
+  if (!user) {
+    return (
+      <Form
+        title="Login"
+        formType="login"
+        handleSubmit={(event, username, password) =>
+          handleLogin(event, username, password, history, sessionContext)
+        }
+      ></Form>
+    )
+  } else if (!user.verified) {
     return (
       <div className="form-container">
         <div className="form-title"> Login </div>
@@ -78,16 +85,6 @@ const Login = props => {
           </a>
         </div>
       </div>
-    )
-  } else if (!user) {
-    return (
-      <Form
-        title="Login"
-        formType="login"
-        handleSubmit={(event, username, password) =>
-          handleLogin(event, username, password, history, sessionContext)
-        }
-      ></Form>
     )
   } else {
     return (

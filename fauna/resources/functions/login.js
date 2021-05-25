@@ -1,5 +1,4 @@
 import fauna from 'faunadb'
-import { ACCOUNT_NOT_VERIFIED } from '../../src/anomalies'
 import { LoginAccount, VerifyAccountExists } from '../../src/login'
 
 const q = fauna.query
@@ -12,11 +11,7 @@ export default CreateFunction({
       ['email', 'password'],
       If(
         VerifyAccountExists(Var('email')),
-        If(
-          Call('is_verified', Var('email')),
-          LoginAccount(Var('email'), Var('password')),
-          ACCOUNT_NOT_VERIFIED
-        ),
+        LoginAccount(Var('email'), Var('password')),
         // if account does not exist, do not provide further information
         false
       )
