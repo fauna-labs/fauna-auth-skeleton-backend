@@ -6,7 +6,7 @@ import { faunaAPI } from '../api/fauna-api'
 const NotificationBar = props => {
   // MOVE TO WARNING BAR..
   const sessionContext = useContext(SessionContext)
-  const { user } = sessionContext.state
+  const { user, loggedIn } = sessionContext.state
 
   const handleResendVerification = event => {
     faunaAPI
@@ -29,14 +29,26 @@ const NotificationBar = props => {
   if (user && !user.verified) {
     return (
       <div className="notification-bar">
-        Please verify your account first. Click here to
+        <span className="bold"> Logged in, not verified</span>, you can only see public dinos,
         <a href="#" onClick={event => handleResendVerification(event)}>
           resend the email verification.
         </a>
       </div>
     )
+  } else if (loggedIn) {
+    return (
+      <div className="notification-bar">
+        <span className="bold">Logged in</span>, you can now see all dinos visible to the user,
+        logout and change your password
+      </div>
+    )
   } else {
-    return null
+    return (
+      <div className="notification-bar">
+        <span className="bold">Logged out</span>, you only see public dinos, can login, register and
+        ask for a password reset
+      </div>
+    )
   }
 }
 
