@@ -24,8 +24,8 @@ const {
   Do
 } = q
 
-const RATE_LIMITING = 'ERROR_RATE_LIMIT'
-const CALL_LIMIT = 'ERROR_CALL_LIMIT'
+export const RATE_LIMITING = 'ERROR_RATE_LIMIT'
+export const CALL_LIMIT = 'ERROR_CALL_LIMIT'
 
 function CreateAccessLogEntry(action, identifier) {
   return Create(Collection('access_logs'), {

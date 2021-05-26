@@ -5,6 +5,7 @@ import { toast } from 'react-toastify'
 
 import { faunaAPI } from '../api/fauna-api'
 import SessionContext from '../context/session'
+import { handleDataLoadingError } from '../api/fauna-api-errors'
 
 const Home = () => {
   const [dinos, setDinos] = useState(null)
@@ -14,9 +15,7 @@ const Home = () => {
   const { user, loggedIn } = sessionContext.state
 
   useEffect(() => {
-    getDinos(user, loggedIn, setLoading, setDinos).catch(err =>
-      handleLoadingError(err, user, sessionContext, setLoading)
-    )
+    getDinos(user, loggedIn, sessionContext, setLoading, setDinos)
   }, [user, history, sessionContext])
 
   if (isLoading) {
@@ -38,8 +37,7 @@ const Home = () => {
   }
 }
 
-async function getDinos(user, loggedIn, setLoading, setDinos) {
-  setLoading('data')
+async function getDinos(user, loggedIn, sessionContext, setLoading, setDinos) {
   return faunaAPI
     .getDinos(user, loggedIn)
     .then(res => {
@@ -50,22 +48,7 @@ async function getDinos(user, loggedIn, setLoading, setDinos) {
         setLoading(false)
       }
     })
-    .catch(err => {
-      console.error('Error fetching dinos', err)
-      setLoading(false)
-    })
-}
-
-function handleLoadingError(err, user, sessionContext, setLoading) {
-  if (err.description && err.description === 'Unauthorized') {
-    if (user) {
-      sessionContext.dispatch({ type: 'logout', data: null })
-      toast.warn('You have been logged out')
-    } else {
-      toast.error(err.description)
-    }
-  }
-  setLoading(false)
+    .catch(err => handleDataLoadingError(err, user, sessionContext, setLoading, toast))
 }
 
 function showDinos(dinos) {

@@ -31,6 +31,8 @@ class FaunaAPI {
       if (res.secret) {
         this.client = this.getClient(res.secret)
         return res
+      } else {
+        return res
       }
     })
   }
