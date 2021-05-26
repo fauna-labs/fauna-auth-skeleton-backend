@@ -33,12 +33,10 @@ const links = [
 const Layout = props => {
   const location = useLocation()
   const sessionContext = useContext(SessionContext)
-  const history = useHistory()
   const [isLoading, setLoading] = useState('session')
 
   useEffect(
     () => {
-      console.log(location)
       if (location.pathname.includes('reset') || location.pathname.includes('verify')) {
         setLoading(false)
       } else {
@@ -51,7 +49,6 @@ const Layout = props => {
               sessionContext.dispatch({ type: 'login', data: res.account.data })
             } else {
               console.log('INFO - There is no session')
-              history.push('/accounts/login')
             }
             setLoading(false)
           })

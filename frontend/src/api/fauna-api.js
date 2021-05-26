@@ -90,9 +90,12 @@ class FaunaAPI {
 
   getClient(secret) {
     const opts = { secret: secret, keepAlive: false }
-    if (process.env.FAUNADB_DOMAIN) opts.domain = process.env.FAUNADB_DOMAIN
-    if (process.env.FAUNADB_SCHEME) opts.scheme = process.env.FAUNADB_SCHEME
-    if (process.env.FAUNADB_PORT) opts.port = process.env.FAUNADB_PORT
+    if (process.env.REACT_APP_LOCAL___FAUNADB_DOMAIN)
+      opts.domain = process.env.REACT_APP_LOCAL___FAUNADB_DOMAIN
+    if (process.env.REACT_APP_LOCAL___FAUNADB_SCHEME)
+      opts.scheme = process.env.REACT_APP_LOCAL___FAUNADB_SCHEME
+    if (process.env.REACT_APP_LOCAL___FAUNADB_PORT)
+      opts.port = process.env.REACT_APP_LOCAL___FAUNADB_PORT
     opts.headers = { 'X-Fauna-Source': 'fauna-auth-skeleton-backend' }
     return new fauna.Client(opts)
   }
