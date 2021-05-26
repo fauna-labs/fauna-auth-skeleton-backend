@@ -1,0 +1,16 @@
+CreateRole({
+  name: 'public',
+  privileges: [
+    {
+      resource: Collection('dinos'),
+      actions: {
+        read: Query(
+          Lambda(
+            ['dinoReference'],
+            Equals(Select(['data', 'rarity'], Get(Var('dinoReference'))), 'common')
+          )
+        )
+      }
+    }
+  ]
+})
