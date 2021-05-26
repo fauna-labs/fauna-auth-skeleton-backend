@@ -7,7 +7,12 @@ export default CreateFunction({
     Lambda(
       ['email', 'password'],
       Do(
-        Call('call_limit', 'failed_login', 'someemail@emaildomain.com', 3),
+        Call(
+          'call_limit',
+          'failed_login',
+          Var('email'),
+          Call('get_config_var', { path: ['call_limits', 'max_failed_logins'] })
+        ),
         Let(
           {
             loginResult: If(
@@ -20,7 +25,7 @@ export default CreateFunction({
           If(
             Equals(Var('loginResult'), false),
             false,
-            Do(Call('reset_logs', 'failed_login', 'someemail@emaildomain.com'), Var('loginResult'))
+            Do(Call('reset_logs', 'failed_login', Var('email')), Var('loginResult'))
           )
         )
       )
