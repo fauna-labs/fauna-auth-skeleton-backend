@@ -1,4 +1,5 @@
 import fauna, { Call } from 'faunadb'
+import { retrieveErrorAndDescription } from '../../../backend/routes/api-errors'
 import * as backendAPI from './backend-api'
 
 class FaunaAPI {
@@ -73,14 +74,21 @@ class FaunaAPI {
       .then(res => {
         return res
       })
-      .catch(async e => await this.refreshAndRetry(queryFun))
+      .catch(async err => {
+        const errorAndCode = retrieveErrorAndDescription(err)
+        if (errorAndCode && errorAndCode.code === 'unauthorized') {
+          await this.refreshAndRetry(queryFun)
+        } else {
+          throw err
+        }
+      })
   }
 
   async refreshAndRetry(queryFun) {
     return this.refreshToken()
       .then(res => {
         if (res) {
-          queryFun()
+          return queryFun()
         }
       })
       .catch(err => {

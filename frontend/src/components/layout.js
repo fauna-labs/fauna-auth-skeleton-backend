@@ -46,7 +46,7 @@ const Layout = props => {
           .then(res => {
             if (!res.error) {
               console.log('INFO - Session found, logging in')
-              sessionContext.dispatch({ type: 'login', data: res.account.data })
+              sessionContext.dispatch({ type: 'login', data: res.account })
             } else {
               console.log('INFO - There is no session')
             }

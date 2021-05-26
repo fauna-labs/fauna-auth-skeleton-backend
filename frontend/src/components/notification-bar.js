@@ -36,14 +36,14 @@ const NotificationBar = props => {
       </div>
     )
   } else if (loggedIn) {
-    if (user.type === 'admin') {
+    if (user && user.type === 'admin') {
       return (
         <div className="notification-bar">
           <span className="bold">Admin Logged in</span>, you can now see all dinos and are not
           rate-limited
         </div>
       )
-    } else if (loggedIn) {
+    } else {
       return (
         <div className="notification-bar">
           <span className="bold">User Logged in</span>, you can now see all dinos visible to the
