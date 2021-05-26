@@ -91,7 +91,7 @@ router.post('/refresh', function(req, res, next) {
   })
 
   const attemptRefresh = () => {
-    return client.query(Call(q.Function('refresh'))).then(faunaRes => {
+    return client.query(Call(Function('refresh'))).then(faunaRes => {
       refreshHandler(faunaRes)
     })
   }
@@ -151,11 +151,11 @@ router.post('/logout', async function(req, res) {
       })
       if (logoutAllTokens) {
         await client
-          .query(Call(q.Function('logout'), true))
+          .query(Call(Function('logout'), true))
           .catch(err => console.log('Error logging out all sessions (access and refresh)', err))
       } else {
         await client
-          .query(Call(q.Function('logout'), false))
+          .query(Call(Function('logout'), false))
           .catch(err => console.log('Error logging out current session (access and refresh)', err))
       }
     }
@@ -201,7 +201,7 @@ function requestPasswordReset(req, res) {
     secret: process.env.BOOTSTRAP_KEY
   })
   return client
-    .query(Call(q.Function('request_password_reset'), email))
+    .query(Call(Function('request_password_reset'), email))
     .then(faunaRes => {
       console.log(faunaRes, email)
       sendPasswordResetEmail(email, faunaRes.secret)

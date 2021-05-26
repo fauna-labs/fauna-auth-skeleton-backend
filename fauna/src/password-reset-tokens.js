@@ -15,7 +15,8 @@ import {
   Now,
   Lambda,
   Delete,
-  Do
+  Do,
+  Map
 } from 'faunadb'
 
 export const RESET_TOKEN_LIFETIME_SECONDS = 1800 // 30 minutes
@@ -44,20 +45,20 @@ export function InvalidateResetTokens(accountRef) {
   return Let(
     {
       resetRequests: Paginate(Match(Index('password_reset_requests_by_account'), accountRef)),
-      resetTokenMatches: q.Map(
+      resetTokenMatches: Map(
         Var('resetRequests'),
         Lambda(['request'], Match(Index('tokens_by_instance'), Var('request')))
       )
     },
     Do(
-      q.Map(
+      Map(
         Var('resetTokenMatches'),
         Lambda(
           ['tokenMatch'],
           If(Exists(Var('tokenMatch')), Delete(Select(['ref'], Get(Var('tokenMatch')))), true)
         )
       ),
-      q.Map(Var('resetRequests'), Lambda(['resetRequestRef'], Delete(Var('resetRequestRef'))))
+      Map(Var('resetRequests'), Lambda(['resetRequestRef'], Delete(Var('resetRequestRef'))))
     )
   )
 }

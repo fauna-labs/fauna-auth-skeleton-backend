@@ -1,4 +1,4 @@
-import { Let, Var, Lambda, Match, CurrentIdentity, Index, If, Paginate } from 'faunadb'
+import { Map, Let, Var, Lambda, Match, CurrentIdentity, Index, If, Paginate } from 'faunadb'
 import { GetSessionId, LogoutAccessAndRefreshToken, VerifyRefreshToken } from './tokens'
 
 // Logout is called with the refresh token.
@@ -21,7 +21,7 @@ function LogoutOne() {
         { size: 100000 }
       )
     },
-    q.Map(Var('refreshTokens'), Lambda(['token'], LogoutAccessAndRefreshToken(Var('token'))))
+    Map(Var('refreshTokens'), Lambda(['token'], LogoutAccessAndRefreshToken(Var('token'))))
   )
 }
 
@@ -34,6 +34,6 @@ function LogoutAll() {
         { size: 100000 }
       )
     },
-    q.Map(Var('refreshTokens'), Lambda(['token'], LogoutAccessAndRefreshToken(Var('token'))))
+    Map(Var('refreshTokens'), Lambda(['token'], LogoutAccessAndRefreshToken(Var('token'))))
   )
 }
