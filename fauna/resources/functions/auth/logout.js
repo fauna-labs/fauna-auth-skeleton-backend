@@ -1,5 +1,5 @@
 import fauna from 'faunadb'
-import { Logout } from '../../src/logout'
+import { Logout } from '../../../src/logout'
 
 const q = fauna.query
 const { Query, Lambda, CreateFunction, Var } = q

@@ -1,5 +1,5 @@
 import fauna from 'faunadb'
-import { RefreshToken } from '../../src/refresh'
+import { RefreshToken } from '../../../src/refresh'
 
 const q = fauna.query
 const { Query, Lambda, CreateFunction } = q

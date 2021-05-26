@@ -1,6 +1,6 @@
 import faunadb from 'faunadb'
 
-import { CreateEmailVerificationToken } from '../../src/verification-tokens'
+import { CreateEmailVerificationToken } from '../../../src/verification-tokens'
 
 const q = faunadb.query
 const { CreateFunction, Query, Lambda, Var } = q

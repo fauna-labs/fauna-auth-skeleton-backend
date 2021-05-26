@@ -1,5 +1,5 @@
 import faunadb from 'faunadb'
-import { ResetPassword } from '../../src/password-reset'
+import { ResetPassword } from '../../../src/password-reset'
 
 const q = faunadb.query
 const { Query, Lambda, CreateFunction, Var, Do, Call } = q

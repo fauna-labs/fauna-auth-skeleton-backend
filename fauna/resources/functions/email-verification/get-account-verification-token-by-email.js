@@ -1,6 +1,6 @@
 import faunadb from 'faunadb'
 
-import { GetAccountByEmail, VerifyAccountExists } from '../../src/login'
+import { GetAccountByEmail, VerifyAccountExists } from '../../../src/login'
 
 const q = faunadb.query
 const { CreateFunction, Query, Lambda, Var, Let, Call, Select, If, And, Not } = q
