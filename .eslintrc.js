@@ -34,8 +34,13 @@ module.exports = {
       files: ['**/resources/**/*.fql'],
       rules: {
         'no-undef': 'off',
-        'no-new-func': 'off'
-      }
+        'no-new-func': 'off',
+      },
+    }, {
+      files: ['**/*.js'],
+      rules: {
+        'no-new-func': 'off',
+      },
     }
   ],
   ignorePatterns: ['temp/']

@@ -1,7 +1,4 @@
-import fauna from 'faunadb'
-
-const q = fauna.query
-const { Select, Filter, Lambda, Var } = q
+import { Select, Filter, Lambda, Var } from 'faunadb'
 
 export function Switch(expressionArr) {
   return Select(

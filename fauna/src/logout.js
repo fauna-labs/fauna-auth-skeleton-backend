@@ -1,8 +1,5 @@
-import fauna from 'faunadb'
+import { Let, Var, Lambda, Match, CurrentIdentity, Index, If, Paginate } from 'faunadb'
 import { GetSessionId, LogoutAccessAndRefreshToken, VerifyRefreshToken } from './tokens'
-
-const q = fauna.query
-const { Let, Var, Lambda, Match, CurrentIdentity, Index, If, Paginate } = q
 
 // Logout is called with the refresh token.
 export function Logout(all) {

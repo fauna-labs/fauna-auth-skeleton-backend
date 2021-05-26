@@ -1,8 +1,4 @@
-import faunadb from 'faunadb'
-import { CreatePasswordResetToken, InvalidateResetTokens } from './password-reset-tokens'
-
-const q = faunadb.query
-const {
+import {
   If,
   Exists,
   Let,
@@ -17,7 +13,9 @@ const {
   Do,
   Delete,
   CurrentToken
-} = q
+} from 'faunadb'
+
+import { CreatePasswordResetToken, InvalidateResetTokens } from './password-reset-tokens'
 
 export const ACCOUNT_NOT_FOUND = {
   code: 'ACCOUNT_NOT_FOUND',

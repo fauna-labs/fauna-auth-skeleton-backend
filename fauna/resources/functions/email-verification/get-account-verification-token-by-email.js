@@ -1,9 +1,6 @@
-import faunadb from 'faunadb'
+import { CreateFunction, Query, Lambda, Var, Let, Call, Select, If, And, Not } from 'faunadb'
 
 import { GetAccountByEmail, VerifyAccountExists } from '../../../src/login'
-
-const q = faunadb.query
-const { CreateFunction, Query, Lambda, Var, Let, Call, Select, If, And, Not } = q
 
 export default CreateFunction({
   name: 'get_account_verification_token_by_email',

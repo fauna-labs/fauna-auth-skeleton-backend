@@ -1,8 +1,17 @@
-import fauna from 'faunadb'
-import { IsCalledWithAccessToken } from '../../src/tokens'
+import {
+  Query,
+  Lambda,
+  Collection,
+  CreateRole,
+  And,
+  Call,
+  Select,
+  Get,
+  CurrentIdentity,
+  Function
+} from 'faunadb'
 
-const q = fauna.query
-const { Query, Lambda, Collection, CreateRole, And, Call, Select, Get, CurrentIdentity } = q
+import { IsCalledWithAccessToken } from '../../src/tokens'
 
 export default CreateRole({
   name: 'loggedin',
@@ -24,13 +33,13 @@ export default CreateRole({
   ],
   privileges: [
     {
-      resource: q.Function('get_all_dinos'),
+      resource: Function('get_all_dinos'),
       actions: {
         call: true
       }
     },
     {
-      resource: q.Function('change_password'),
+      resource: Function('change_password'),
       actions: {
         call: true
       }

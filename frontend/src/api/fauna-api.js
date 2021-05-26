@@ -1,7 +1,5 @@
-import fauna from 'faunadb'
+import fauna, { Call } from 'faunadb'
 import * as backendAPI from './backend-api'
-const q = fauna.query
-const { Call } = q
 
 class FaunaAPI {
   constructor() {

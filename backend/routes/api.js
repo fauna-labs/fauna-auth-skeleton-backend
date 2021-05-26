@@ -1,7 +1,7 @@
 // Instead of executing queries on the frontend, we will execute some of them in the backend.
 import cors from 'cors'
 import express from 'express'
-import fauna from 'faunadb'
+import fauna, { Call, Function } from 'faunadb'
 
 import {
   getRefreshErrorCode,
@@ -16,9 +16,6 @@ import {
   ACCESS_TOKEN_LIFETIME_SECONDS,
   REFRESH_TOKEN_LIFETIME_SECONDS
 } from '../../fauna/src/tokens'
-
-const q = fauna.query
-const { Call } = q
 
 const router = express.Router()
 const corsOptions = {
@@ -41,7 +38,7 @@ router.post('/login', function(req, res, next) {
 
   const { email, password } = req.body
   return client
-    .query(Call(q.Function('login'), email, password))
+    .query(Call(Function('login'), email, password))
     .then(faunaRes => {
       // Either we return a custom error
       if (faunaRes.code) {

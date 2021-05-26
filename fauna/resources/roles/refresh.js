@@ -1,8 +1,5 @@
-import fauna from 'faunadb'
+import { Query, Lambda, Collection, CreateRole, Function } from 'faunadb'
 import { IsCalledWithRefreshToken } from '../../src/tokens'
-
-const q = fauna.query
-const { Query, Lambda, Collection, CreateRole } = q
 
 export default CreateRole({
   name: 'refresh',
@@ -22,13 +19,13 @@ export default CreateRole({
     // - his refresh actions will be detected if or when the browser of the real user initiates a refresh.
     // In essence, it reduces the ease of getting long-term access significantly if a refresh token does leak.
     {
-      resource: q.Function('refresh'),
+      resource: Function('refresh'),
       actions: {
         call: true
       }
     },
     {
-      resource: q.Function('logout'),
+      resource: Function('logout'),
       actions: {
         call: true
       }

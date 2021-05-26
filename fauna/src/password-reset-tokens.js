@@ -1,6 +1,4 @@
-import faunadb from 'faunadb'
-const q = faunadb.query
-const {
+import {
   If,
   Exists,
   Let,
@@ -18,7 +16,7 @@ const {
   Lambda,
   Delete,
   Do
-} = q
+} from 'faunadb'
 
 export const RESET_TOKEN_LIFETIME_SECONDS = 1800 // 30 minutes
 

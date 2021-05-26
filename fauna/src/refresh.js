@@ -1,8 +1,5 @@
-import fauna from 'faunadb'
+import { CurrentIdentity, Get } from 'faunadb'
 import { RotateAccessAndRefreshToken, VerifyRefreshToken } from './tokens'
-
-const q = fauna.query
-const { CurrentIdentity, Get } = q
 
 export function RefreshToken(
   gracePeriodSeconds,

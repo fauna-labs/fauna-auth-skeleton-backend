@@ -1,8 +1,5 @@
-import fauna from 'faunadb'
+import { Query, Lambda, CreateFunction, Var } from 'faunadb'
 import { Logout } from '../../../src/logout'
-
-const q = fauna.query
-const { Query, Lambda, CreateFunction, Var } = q
 
 export default CreateFunction({
   name: 'logout',

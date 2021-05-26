@@ -1,13 +1,4 @@
-import faunadb, { If } from 'faunadb'
 import {
-  LogAnomaly,
-  REFRESH_TOKEN_EXPIRED,
-  REFRESH_TOKEN_REUSE_ERROR,
-  REFRESH_TOKEN_USED_AFTER_LOGOUT
-} from './anomalies'
-
-const q = faunadb.query
-const {
   Let,
   Var,
   Create,
@@ -29,8 +20,16 @@ const {
   And,
   GT,
   CurrentIdentity,
-  Not
-} = q
+  Not,
+  If
+} from 'faunadb'
+
+import {
+  LogAnomaly,
+  REFRESH_TOKEN_EXPIRED,
+  REFRESH_TOKEN_REUSE_ERROR,
+  REFRESH_TOKEN_USED_AFTER_LOGOUT
+} from './anomalies'
 
 export const ACCESS_TOKEN_LIFETIME_SECONDS = 600 // 10 minutes
 // lifetome of the token makes the refresh token unusable after this lifetime since

@@ -1,6 +1,4 @@
-import fauna from 'faunadb'
-const q = fauna.query
-const { Do, Create, Collection, CurrentToken, CurrentIdentity } = q
+import { Do, Create, Collection, CurrentToken, CurrentIdentity } from 'faunadb'
 
 export const REFRESH_TOKEN_REUSE_ERROR = {
   code: 'REFRESH_TOKEN_REUSE',
