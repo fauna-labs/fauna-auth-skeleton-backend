@@ -5,9 +5,7 @@ const { Call } = q
 
 class FaunaAPI {
   constructor() {
-    this.client = new fauna.Client({
-      secret: process.env.REACT_APP_LOCAL___PUBLIC_BOOTSTRAP_KEY
-    })
+    this.client = this.getClient(process.env.REACT_APP_LOCAL___PUBLIC_BOOTSTRAP_KEY)
     this.logout = this.logout.bind(this)
     this.getClient = this.getClient.bind(this)
     this.lastRefresh = null
@@ -32,8 +30,10 @@ class FaunaAPI {
 
   async refreshToken() {
     return await backendAPI.refreshToken().then(res => {
-      this.client = this.getClient(res.secret)
-      return res
+      if (res.secret) {
+        this.client = this.getClient(res.secret)
+        return res
+      }
     })
   }
 
