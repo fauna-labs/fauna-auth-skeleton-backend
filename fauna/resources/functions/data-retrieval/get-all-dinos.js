@@ -14,7 +14,9 @@ import {
   Equals,
   CurrentIdentity,
   Match,
-  Difference
+  Difference,
+  Do,
+  Call
 } from 'faunadb'
 
 import { Switch } from '../../../src/switch'
@@ -36,6 +38,9 @@ const GetAllCommonDinos = Map(
   Lambda(x => Get(x))
 )
 
+const IdentityBasedRateLimit = Call('rate_limit', 'get-dinos', CurrentIdentity(), 3, 60000)
+const PublicRateLimit = Call('rate_limit', 'get-dinos', 'public', 20, 60000)
+
 export default CreateFunction({
   name: 'get_all_dinos',
   body: Query(
@@ -47,15 +52,15 @@ export default CreateFunction({
             HasCurrentIdentity(),
             Equals(Select(['data', 'type'], Get(CurrentIdentity()), 'normal'), 'admin')
           ),
-          then: GetAllDinos
+          then: Do(IdentityBasedRateLimit, GetAllDinos)
         },
         {
           if: HasCurrentIdentity(),
-          then: GetAllNonLegendaryDinos
+          then: Do(IdentityBasedRateLimit, GetAllNonLegendaryDinos)
         },
         {
           if: true,
-          then: GetAllCommonDinos
+          then: Do(GetAllCommonDinos, PublicRateLimit)
         }
       ])
     )
