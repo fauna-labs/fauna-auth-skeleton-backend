@@ -1,0 +1,10 @@
+Update(Role("frontend_public_role"), {
+  privileges: [{
+    resource: Function("get_all_dinos"),
+    actions: {
+      call: true
+    }
+  }],
+  data: null,
+  membership: null
+})

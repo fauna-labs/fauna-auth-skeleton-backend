@@ -1,0 +1,10 @@
+Update(Role("dino_access_role"), {
+  privileges: [{
+    resource: Collection("dinos"),
+    actions: {
+      read: Query(Lambda(["dinoReference"], Not(Equals(Select(["data", "rarity"], Get(Var("dinoReference"))), "legendary"))))
+    }
+  }],
+  data: null,
+  membership: null
+})

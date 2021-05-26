@@ -10,7 +10,7 @@
     "esm": "^3.2.25",
     "express": "~4.16.1",
     "express-session": "^1.17.1",
-    "faunadb": "^2.14.2",
+    "faunadb": "^4.3.0",
     "morgan": "~1.9.1",
     "nodemailer": "^6.4.8",
     "url-join": "^4.0.1",

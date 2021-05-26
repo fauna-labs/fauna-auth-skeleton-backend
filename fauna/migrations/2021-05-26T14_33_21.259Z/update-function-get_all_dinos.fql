@@ -1,0 +1,5 @@
+Update(Function("get_all_dinos"), {
+  body: Query(Lambda([], Map(Paginate(Documents(Collection("dinos"))), Lambda("x", Get(Var("x")))))),
+  role: Role("dino_access_role"),
+  data: null
+})

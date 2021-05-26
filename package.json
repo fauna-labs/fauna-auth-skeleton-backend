@@ -14,7 +14,7 @@
   },
   "homepage": "https://github.com/fauna-brecht/skeleton-auth#readme",
   "scripts": {
-    "postinstall": "cd frontend && npm install && cd ../fauna-queries && npm install && cd ../backend && npm install && cd ..",
+    "postinstall": "cd frontend && npm install && cd ../backend && npm install && cd ..",
     "start": "concurrently --handle-input \"npm run start_backend\" \"npm run start_frontend\"",
     "start_frontend": "cd frontend && npm run start",
     "start_backend": "cd backend && npm run start"
@@ -48,7 +48,7 @@
     "extends": "react-app"
   },
   "dependencies": {
-    "faunadb": "^4.2.0",
+    "faunadb": "^4.3.0",
     "url-join": "^4.0.1"
   }
 }
