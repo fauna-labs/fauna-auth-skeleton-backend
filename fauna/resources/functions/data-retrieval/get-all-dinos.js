@@ -46,23 +46,22 @@ export default CreateFunction({
   body: Query(
     Lambda(
       [],
-      Switch([
-        {
-          if: And(
-            HasCurrentIdentity(),
-            Equals(Select(['data', 'type'], Get(CurrentIdentity()), 'normal'), 'admin')
-          ),
-          then: Do(IdentityBasedRateLimit, GetAllDinos)
-        },
-        {
-          if: HasCurrentIdentity(),
-          then: Do(IdentityBasedRateLimit, GetAllNonLegendaryDinos)
-        },
-        {
-          if: true,
-          then: Do(GetAllCommonDinos, PublicRateLimit)
-        }
-      ])
+      Switch(
+        [
+          {
+            if: And(
+              HasCurrentIdentity(),
+              Equals(Select(['data', 'type'], Get(CurrentIdentity()), 'normal'), 'admin')
+            ),
+            then: Do(IdentityBasedRateLimit, GetAllDinos)
+          },
+          {
+            if: HasCurrentIdentity(),
+            then: Do(IdentityBasedRateLimit, GetAllNonLegendaryDinos)
+          }
+        ],
+        Do(PublicRateLimit, GetAllCommonDinos)
+      )
     )
   ),
   role: 'server'

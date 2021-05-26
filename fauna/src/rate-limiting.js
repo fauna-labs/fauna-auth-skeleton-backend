@@ -27,7 +27,7 @@ const {
 const RATE_LIMITING = 'ERROR_RATE_LIMIT'
 const CALL_LIMIT = 'ERROR_CALL_LIMIT'
 
-function CreateAccessLogEntry (action, identifier) {
+function CreateAccessLogEntry(action, identifier) {
   return Create(Collection('access_logs'), {
     data: {
       action: action,
@@ -36,12 +36,15 @@ function CreateAccessLogEntry (action, identifier) {
   })
 }
 
-export function AddRateLimiting (action, identifier, calls, perMilliSeconds) {
+export function AddRateLimiting(action, identifier, calls, perMilliSeconds) {
   return Let(
     {
-      logsPage: Paginate(Match(Index('access_logs_by_action_and_identity_ordered_by_ts'), action, identifier), {
-        size: calls
-      })
+      logsPage: Paginate(
+        Match(Index('access_logs_by_action_and_identity_ordered_by_ts'), action, identifier),
+        {
+          size: calls
+        }
+      )
     },
     // An access logs page from that index looks like { data: [timestamp1, timestamp2,...]},
 
@@ -54,7 +57,6 @@ export function AddRateLimiting (action, identifier, calls, perMilliSeconds) {
       // If it is, you have done too many calls within the same timewindow and are rate limited.
       Let(
         {
-
           timestamp: Select(['data', Subtract(calls, 1), 0], Var('logsPage')),
           // transform the Fauna timestamp to a Time object
           time: Epoch(Var('timestamp'), 'microseconds'),
@@ -72,12 +74,15 @@ export function AddRateLimiting (action, identifier, calls, perMilliSeconds) {
   )
 }
 
-export function AddCallLimit (action, identifier, calls) {
+export function AddCallLimit(action, identifier, calls) {
   return Let(
     {
-      logsPage: Paginate(Match(Index('access_logs_by_action_and_identity_ordered_by_ts'), action, identifier), {
-        size: calls
-      })
+      logsPage: Paginate(
+        Match(Index('access_logs_by_action_and_identity_ordered_by_ts'), action, identifier),
+        {
+          size: calls
+        }
+      )
     },
     If(
       // Either the page is empty or there are less calls than the limit logged.
