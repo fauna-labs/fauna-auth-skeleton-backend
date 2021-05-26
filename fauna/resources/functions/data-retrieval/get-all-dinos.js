@@ -53,7 +53,7 @@ export default CreateFunction({
               HasCurrentIdentity(),
               Equals(Select(['data', 'type'], Get(CurrentIdentity()), 'normal'), 'admin')
             ),
-            then: Do(IdentityBasedRateLimit, GetAllDinos)
+            then: GetAllDinos
           },
           {
             if: HasCurrentIdentity(),
