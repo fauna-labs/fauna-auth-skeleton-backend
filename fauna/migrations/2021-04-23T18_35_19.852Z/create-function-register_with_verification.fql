@@ -1,8 +1,0 @@
-CreateFunction({
-  name: "register_with_verification",
-  body: Query(Lambda(["email", "password"], {
-    verificationToken: Call("get_account_verification_token", Var("email")),
-    account: Call("register", [Var("email"), Var("password")])
-  })),
-  role: "server"
-})

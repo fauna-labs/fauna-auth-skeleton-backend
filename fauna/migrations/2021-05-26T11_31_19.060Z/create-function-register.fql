@@ -1,4 +1,5 @@
-Update(Function("register"), {
+CreateFunction({
+  name: "register",
   body: Query(Lambda(["email", "password"], Do(Call("validate_email", Var("email")), Call("validate_password", Var("password")), Create(Collection("accounts"), {
     credentials: {
       password: Var("password")
@@ -7,6 +8,5 @@ Update(Function("register"), {
       email: Var("email")
     }
   })))),
-  role: "server",
-  data: null
+  role: "server"
 })

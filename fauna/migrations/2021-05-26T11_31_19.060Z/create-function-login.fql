@@ -1,5 +1,6 @@
-Update(Function("login"), {
-  body: Query(Lambda(["email", "password"], If(Call("is_verified", Var("email")), If(And(Exists(Match(Index("accounts_by_email"), Var("email"))), Identify(Select(["ref"], Get(Match(Index("accounts_by_email"), Var("email")))), Var("password"))), Let([{
+CreateFunction({
+  name: "login",
+  body: Query(Lambda(["email", "password"], If(Exists(Match(Index("accounts_by_email"), Var("email"))), If(Identify(Select(["ref"], Get(Match(Index("accounts_by_email"), Var("email")))), Var("password")), Let([{
     account: Get(Match(Index("accounts_by_email"), Var("email")))
   }, {
     accountRef: Select(["ref"], Var("account"))
@@ -32,10 +33,6 @@ Update(Function("login"), {
   }], {
     tokens: Var("tokens"),
     account: Var("account")
-  }), false), Abort({
-    code: "ACCOUNT_NOT_VERIFIED",
-    message: "The email of the account was not verified yet"
-  })))),
-  role: "admin",
-  data: null
+  }), false), false))),
+  role: "admin"
 })

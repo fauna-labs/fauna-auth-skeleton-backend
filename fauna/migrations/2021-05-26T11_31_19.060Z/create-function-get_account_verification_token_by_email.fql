@@ -1,9 +1,9 @@
-Update(Function("get_account_verification_token_by_email"), {
+CreateFunction({
+  name: "get_account_verification_token_by_email",
   body: Query(Lambda(["email"], If(And(Exists(Match(Index("accounts_by_email"), Var("email"))), Not(Call("is_verified", Var("email")))), Let([{
     account: Get(Match(Index("accounts_by_email"), Var("email")))
   }, {
     accountRef: Select(["ref"], Var("account"))
   }], Call("get_account_verification_token", Var("accountRef"))), false))),
-  role: "server",
-  data: null
+  role: "server"
 })
