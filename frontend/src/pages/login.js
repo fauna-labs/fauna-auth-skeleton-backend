@@ -14,7 +14,9 @@ const handleLogin = (event, username, password, history, sessionContext) => {
   faunaAPI
     .login(username, password)
     .then(res => {
-      if (res === false) {
+      if (res.error) {
+        toast.error(res.error)
+      } else if (res === false) {
         toast.error('Login failed')
       } else {
         toast.success('Login successful')

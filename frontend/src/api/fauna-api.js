@@ -13,14 +13,19 @@ class FaunaAPI {
   /** ******* Authentication is delegated through the backend *********/
   async login(email, password) {
     return await backendAPI.login(email, password).then(loginResult => {
-      this.client = this.getClient(loginResult.secret)
-      this.lastRefresh = Date.now()
+      if (!loginResult.error) {
+        this.client = this.getClient(loginResult.secret)
+        this.lastRefresh = Date.now()
+      }
       return loginResult
     })
   }
 
   async logout(all) {
-    return await backendAPI.logout()
+    return await backendAPI.logout(all).then(res => {
+      this.client = this.getClient(process.env.REACT_APP_LOCAL___PUBLIC_BOOTSTRAP_KEY)
+      return res
+    })
   }
 
   async requestReset(username) {
