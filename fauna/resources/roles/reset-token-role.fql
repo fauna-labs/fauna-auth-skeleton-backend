@@ -1,4 +1,3 @@
-
 CreateRole({
   name: 'reset-token-role',
   membership: [

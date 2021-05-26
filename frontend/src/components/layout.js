@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
 import { ToastContainer, toast } from 'react-toastify'
-import { Link, useHistory, useLocation } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import SessionContext from '../context/session'
 import { faunaAPI } from '../api/fauna-api'
 import Loading from './loading'

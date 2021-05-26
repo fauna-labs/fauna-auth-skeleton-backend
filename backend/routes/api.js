@@ -2,7 +2,6 @@
 import cors from 'cors'
 import express from 'express'
 import fauna from 'faunadb'
-import urljoin from 'url-join'
 
 import {
   getRefreshErrorCode,
