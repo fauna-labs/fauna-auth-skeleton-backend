@@ -1,5 +1,5 @@
 CreateRole({
-  name: 'public',
+  name: 'frontend_public_role',
   privileges: [
     {
       resource: Collection('dinos'),
