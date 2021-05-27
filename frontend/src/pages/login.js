@@ -3,20 +3,24 @@ import { useHistory } from 'react-router-dom'
 import { toast } from 'react-toastify'
 
 import SessionContext from './../context/session'
-import { faunaQueries } from '../fauna/query-manager'
+import { faunaAPI } from '../api/fauna-api'
+import parseQuery from './../util/parse-query'
 
 // Components
 import Form from '../components/form'
 
 const handleLogin = (event, username, password, history, sessionContext) => {
-  faunaQueries
+  console.log('INFO - Attempting to log in')
+  faunaAPI
     .login(username, password)
-    .then(account => {
-      if (account === false) {
+    .then(res => {
+      if (res.error) {
+        toast.error(res.error)
+      } else if (res === false) {
         toast.error('Login failed')
       } else {
         toast.success('Login successful')
-        sessionContext.dispatch({ type: 'login', data: account })
+        sessionContext.dispatch({ type: 'login', data: res.account.data })
         history.push('/')
       }
     })
@@ -34,15 +38,21 @@ const handleLogin = (event, username, password, history, sessionContext) => {
 
 const Login = props => {
   const history = useHistory()
+  const queryParams = parseQuery(history.location.search)
+  if (queryParams.error) {
+    toast.error(queryParams.error)
+  }
   const sessionContext = useContext(SessionContext)
-  const { user } = sessionContext.state
+  const { loggedIn } = sessionContext.state
 
-  if (!user) {
+  if (!loggedIn) {
     return (
       <Form
         title="Login"
         formType="login"
-        handleSubmit={(event, username, password) => handleLogin(event, username, password, history, sessionContext)}
+        handleSubmit={(event, username, password) =>
+          handleLogin(event, username, password, history, sessionContext)
+        }
       ></Form>
     )
   } else {

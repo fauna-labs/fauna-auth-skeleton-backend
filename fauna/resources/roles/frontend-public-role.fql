@@ -1,0 +1,11 @@
+CreateRole({
+  name: 'frontend_public_role',
+  privileges: [
+    {
+      resource: q.Function('get_all_dinos'),
+      actions: {
+        call: true
+      }
+    }
+  ]
+})

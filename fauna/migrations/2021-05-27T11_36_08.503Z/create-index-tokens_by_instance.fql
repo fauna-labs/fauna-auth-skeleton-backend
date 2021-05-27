@@ -1,0 +1,8 @@
+CreateIndex({
+  "name": "tokens_by_instance",
+  "source": Tokens(),
+  "terms": [{
+    "field": ["instance"]
+  }],
+  "serialized": true
+})

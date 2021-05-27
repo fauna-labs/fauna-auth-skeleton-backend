@@ -14,17 +14,16 @@
   },
   "homepage": "https://github.com/fauna-brecht/skeleton-auth#readme",
   "scripts": {
+    "postinstall": "cd frontend && npm install && cd ../backend && npm install && cd ..",
+    "start": "concurrently --handle-input \"npm run start_backend\" \"npm run start_frontend\"",
     "start_frontend": "cd frontend && npm run start",
-    "start_backend": "cd backend && npm run start",
-    "setup": "cd fauna-queries && npm run setup",
-    "destroy": "cd fauna-queries && npm run destroy",
-    "update-functions": "cd fauna-queries && npm run update-functions"
+    "start_backend": "cd backend && npm run start"
   },
   "devDependencies": {
+    "concurrently": "^5.3.0",
     "dotenv": "^8.2.0",
     "envfile": "^5.0.0",
-    "eslint": "^6.8.0",
-    "eslint-config-idiomatic": "^4.0.0",
+    "eslint": "^7.27.0",
     "eslint-config-prettier": "^6.10.0",
     "eslint-config-prettier-standard": "^3.0.1",
     "eslint-config-standard": "^14.1.0",
@@ -34,9 +33,10 @@
     "eslint-plugin-node": "^11.0.0",
     "eslint-plugin-prettier": "^3.1.2",
     "eslint-plugin-promise": "^4.2.1",
-    "eslint-plugin-react": "^7.18.3",
+    "eslint-plugin-react": "^7.23.2",
     "eslint-plugin-standard": "^4.0.1",
     "esm": "^3.2.25",
+    "fauna-schema-migrate": "^2.1.1",
     "prettier": "1.19.1",
     "prettier-config-standard": "^1.0.1",
     "readline-promise": "^1.0.4",
@@ -47,6 +47,7 @@
     "extends": "react-app"
   },
   "dependencies": {
+    "faunadb": "^4.3.0",
     "url-join": "^4.0.1"
   }
 }

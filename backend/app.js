@@ -10,7 +10,6 @@ config({ path: '.env.' + process.argv[2] })
 const apiRouter = require('./routes/api')
 const app = express()
 app.use(cookieParser())
-
 app.use(logger('dev'))
 app.use(express.json())
 app.use(express.urlencoded({ extended: false }))
@@ -26,9 +25,9 @@ app.set('trust proxy', 1) // trust first proxy
 app.use(
   session({
     name: 'fauna-app-session',
-    secret: process.env.COOKIE_SIGN_SECRET,
     resave: false,
     saveUninitialized: false,
+    secret: process.env.SESSION_SECRET,
     cookie: {
       secure: false, // we should server from https in that case, which requires a certificate.
       httpOnly: true,

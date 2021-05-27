@@ -1,45 +1,26 @@
 import React, { useEffect, useContext, useState } from 'react'
 import { useHistory } from 'react-router-dom'
-import Loading from '../components/states/loading'
+import Loading from '../components/loading'
 import { toast } from 'react-toastify'
 
-import { faunaQueries } from '../fauna/query-manager'
-
+import { faunaAPI } from '../api/fauna-api'
 import SessionContext from '../context/session'
+import { handleDataLoadingError } from '../api/fauna-api-errors'
 
 const Home = () => {
   const [dinos, setDinos] = useState(null)
-  const [loading, setLoading] = useState(false)
-
+  const [isLoading, setLoading] = useState(false)
   const history = useHistory()
-
   const sessionContext = useContext(SessionContext)
-  const { user } = sessionContext.state
+  const { user, loggedIn } = sessionContext.state
 
   useEffect(() => {
-    if (!user) {
-      setLoading(true)
-      faunaQueries
-        .refresh()
-        .then(data => {
-          if (data) {
-            sessionContext.dispatch({ type: 'login', data: data })
-            setLoading(false)
-          } else {
-            return getDinos(user, setLoading, setDinos, sessionContext)
-          }
-        })
-        .catch(err => {
-          setLoading(false)
-          console.log(err)
-        })
-    } else {
-      getDinos(user, setLoading, setDinos, sessionContext)
-    }
-  }, [user, history])
+    setLoading(true)
+    getDinos(user, loggedIn, sessionContext, setLoading, setDinos)
+  }, [user, history, sessionContext])
 
-  if (loading) {
-    return Loading()
+  if (isLoading) {
+    return Loading(isLoading)
   } else if (dinos && dinos.data.length) {
     return (
       <React.Fragment>
@@ -57,26 +38,18 @@ const Home = () => {
   }
 }
 
-async function getDinos(user, setLoading, setDinos, sessionContext) {
-  return faunaQueries
-    .getDinos()
+async function getDinos(user, loggedIn, sessionContext, setLoading, setDinos) {
+  return faunaAPI
+    .getDinos(user, loggedIn)
     .then(res => {
-      if (res !== false) {
+      if (!res.error) {
         setDinos(res)
+        setLoading(false)
+      } else {
         setLoading(false)
       }
     })
-    .catch(err => {
-      if (err.description && err.description === 'Unauthorized') {
-        if (user) {
-          sessionContext.dispatch({ type: 'logout', data: null })
-          toast.warn('You have been logged out')
-        } else {
-          toast.error(err.description)
-        }
-      }
-      setLoading(false)
-    })
+    .catch(err => handleDataLoadingError(err, user, sessionContext, setLoading, toast))
 }
 
 function showDinos(dinos) {
@@ -87,7 +60,12 @@ function showDinos(dinos) {
           {d.data.name}
         </span>
         <div className="dino-image-container" key={'dino-card-container-' + i}>
-          <img className="dino-image" key={'dino-card-image' + i} src={`/images/${d.data.icon}`} alt="no results"></img>
+          <img
+            className="dino-image"
+            key={'dino-card-image' + i}
+            src={`/images/${d.data.icon}`}
+            alt="no results"
+          ></img>
         </div>
         <span key={'dino-card-rarity-' + i} className={'dino-rarity ' + d.data.rarity}>
           {d.data.rarity}

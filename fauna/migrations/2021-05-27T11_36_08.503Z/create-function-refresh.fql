@@ -1,0 +1,82 @@
+CreateFunction({
+  "name": "refresh",
+  "body": Query(Lambda([], Let([{
+    "logRefresh": Call("config_var", {
+      "path": ["logging", "refresh"]
+    })
+  }, {
+    "refreshResult": If(And(Select(["data", "used"], Get(CurrentToken())), Not(GT(Select(["data", "gracePeriodUntil"], Get(CurrentToken())), Now()))), Do(Create(Collection("anomalies"), {
+      "data": {
+        "error": {
+          "code": "REFRESH_TOKEN_REUSE",
+          "message": "The refresh token was used outside of the grace period which indicates that it was leaked"
+        },
+        "token": CurrentToken(),
+        "account": CurrentIdentity(),
+        "action": "refresh"
+      }
+    }), {
+      "code": "REFRESH_TOKEN_REUSE",
+      "message": "The refresh token was used outside of the grace period which indicates that it was leaked"
+    }), If(GT(Select(["data", "validUntil"], Get(CurrentToken())), Now()), If(Not(Select(["data", "loggedOut"], Get(CurrentToken()))), {
+      "tokens": Do(Update(CurrentToken(), {
+        "data": {
+          "used": true,
+          "gracePeriodUntil": TimeAdd(Now(), 20, "seconds")
+        }
+      }), Let([{
+        "refresh": Create(Tokens(), {
+          "instance": CurrentIdentity(),
+          "data": {
+            "type": "refresh",
+            "used": false,
+            "sessionId": If(And(HasCurrentToken(), Equals(Select(["data", "type"], Get(CurrentToken()), false), "refresh")), Select(["data", "sessionId"], Get(CurrentToken())), NewId()),
+            "validUntil": TimeAdd(Now(), 28800, "seconds"),
+            "loggedOut": false
+          },
+          "ttl": TimeAdd(Now(), 604800, "seconds")
+        })
+      }, {
+        "access": Create(Tokens(), {
+          "instance": CurrentIdentity(),
+          "data": {
+            "type": "access",
+            "refresh": Select(["ref"], Var("refresh"))
+          },
+          "ttl": TimeAdd(Now(), 600, "seconds")
+        })
+      }], {
+        "refresh": Var("refresh"),
+        "access": Var("access")
+      })),
+      "account": Get(CurrentIdentity())
+    }, Do(Create(Collection("anomalies"), {
+      "data": {
+        "error": {
+          "code": "REFRESH_TOKEN_USED_AFTER_LOGOUT",
+          "message": "The refresh token was used after logging out"
+        },
+        "token": CurrentToken(),
+        "account": CurrentIdentity(),
+        "action": "refresh"
+      }
+    }), {
+      "code": "REFRESH_TOKEN_USED_AFTER_LOGOUT",
+      "message": "The refresh token was used after logging out"
+    })), Do(Create(Collection("anomalies"), {
+      "data": {
+        "error": {
+          "code": "REFRESH_TOKEN_EXPIRED",
+          "message": "The refresh token was expired"
+        },
+        "token": CurrentToken(),
+        "account": CurrentIdentity(),
+        "action": "refresh"
+      }
+    }), {
+      "code": "REFRESH_TOKEN_EXPIRED",
+      "message": "The refresh token was expired"
+    })))
+  }], Do(If(Var("logRefresh"), Call("log", ["auth", "refresh", Select(["data", "email"], Get(CurrentIdentity()))]), false), Var("refreshResult"))))),
+  "role": "server"
+})

@@ -5,13 +5,21 @@ const SessionContext = React.createContext({})
 export const sessionReducer = (state, action) => {
   switch (action.type) {
     case 'login': {
-      return { user: action.data.data.email }
+      return { user: action.data, loggedIn: true }
     }
     case 'register': {
-      return { user: action.data.data.email }
+      return { user: action.data }
     }
     case 'logout': {
-      return { user: null }
+      return { user: null, loggedIn: false }
+    }
+    case 'verify': {
+      if (state.loggedIn) {
+        return { user: action.data, loggedIn: true }
+      } else {
+        window.location.reload()
+        return state
+      }
     }
     default: {
       throw new Error(`Unhandled action type: ${action.type}`)

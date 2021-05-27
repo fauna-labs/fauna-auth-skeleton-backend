@@ -1,12 +1,26 @@
 // Instead of executing queries on the frontend, we will execute some of them in the backend.
 import cors from 'cors'
 import express from 'express'
-import faunadb from 'faunadb'
+import { Call, Function } from 'faunadb'
 
-import { HandleLoginError, HandleRegisterError } from './api-errors'
-
-const q = faunadb.query
-const { Call } = q
+import {
+  getRefreshErrorCode,
+  handleLoginError,
+  handleRegisterError,
+  handleResetError,
+  handleVerificationError
+} from './api-errors'
+import { sendPasswordResetEmail, sendAccountVerificationEmail } from './../util/emails'
+import {
+  resetExpressSession,
+  setExpressSession,
+  getClient,
+  setAccountExpressSession
+} from './api-helpers'
+import {
+  ACCESS_TOKEN_LIFETIME_SECONDS,
+  REFRESH_TOKEN_LIFETIME_SECONDS
+} from '../../fauna/src/tokens'
 
 const router = express.Router()
 const corsOptions = {
@@ -15,78 +29,111 @@ const corsOptions = {
   optionsSuccessStatus: 200,
   credentials: true,
   allowedHeaders: ['Content-Type, Set-Cookie, *'],
-  maxAge: 600
+  maxAge: REFRESH_TOKEN_LIFETIME_SECONDS * 1000
 }
 
-// **** Login *****
+router.use(cors(corsOptions))
 
-router.options('/accounts/login', cors(corsOptions))
-router.post('/accounts/login', cors(corsOptions), function(req, res, next) {
+// **** Login *****
+router.post('/login', function(req, res, next) {
   res.status(200)
-  const client = new faunadb.Client({
-    secret: process.env.BOOTSTRAP_KEY
-  })
+  const client = getClient(process.env.BOOTSTRAP_KEY)
 
   const { email, password } = req.body
   return client
-    .query(Call(q.Function('login'), email, password))
+    .query(Call(Function('login'), email, password))
     .then(faunaRes => {
-      // Set the refreshToken in the httpOnly cookie.
-      req.session.refreshToken = faunaRes.refresh.secret
-      // Then we send the ACCESS token to the frontend to be kept in memory (this also needs to happen over https in a production app)
-      // To make sure that the frontend can talk to FaunaDB directly. The ACCESS token is short-lived.
-      const result = { account: faunaRes.account, secret: faunaRes.access.secret }
-      return res.json(result)
+      // Either we return a custom error
+      if (faunaRes.code) {
+        return res.json(faunaRes)
+      }
+      // Or simply fail if false
+      else if (!faunaRes) {
+        return res.json(faunaRes)
+      }
+      // Or we succeed with the login and can receive a set of tokens.
+      else {
+        // Set the refreshToken in the httpOnly cookie.
+
+        setExpressSession(req, faunaRes)
+
+        // Then we send the ACCESS token to the frontend to be kept in memory (this also needs to happen over https in a production app)
+        // To make sure that the frontend can talk to FaunaDB directly. The ACCESS token is short-lived.
+        const result = { account: faunaRes.account, secret: faunaRes.tokens.access.secret }
+        return res.json(result)
+      }
     })
-    .catch(err => HandleLoginError(err, res))
+    .catch(err => handleLoginError(err, res))
 })
 
 // **** Register *****
 
-router.options('/accounts/register', cors(corsOptions))
-router.post('/accounts/register', cors(corsOptions), function(req, res, next) {
+router.post('/register', function(req, res, next) {
   res.status(200)
-  const client = new faunadb.Client({
-    secret: process.env.BOOTSTRAP_KEY
-  })
+  const client = getClient(process.env.BOOTSTRAP_KEY)
 
   const { email, password } = req.body
 
   return client
-    .query(Call(q.Function('register'), email, password))
+    .query(Call('register_with_verification', email, password))
     .then(faunaRes => {
+      sendAccountVerificationEmail(email, faunaRes.verificationToken.secret)
       return res.json(faunaRes)
     })
-    .catch(err => HandleRegisterError(err, res))
+    .catch(err => handleRegisterError(err, res))
 })
 
 // **** Refresh *****
-router.options('/accounts/refresh', cors(corsOptions))
-router.post('/accounts/refresh', cors(corsOptions), function(req, res, next) {
+router.post('/refresh', function(req, res, next) {
   res.status(200)
-  if (req.session.refreshToken) {
-    console.log('INFO - Session - found an active session, trying to refresh using refresh token')
-    const client = new faunadb.Client({
-      secret: req.session.refreshToken
+
+  const client = getClient(req.session.refreshToken)
+
+  const attemptRefresh = () => {
+    return client.query(Call(Function('refresh'))).then(faunaRes => {
+      refreshHandler(faunaRes)
     })
-    return client
-      .query(Call(q.Function('refresh_token')))
-      .then(faunaRes => {
-        return res.json({ secret: faunaRes.access.secret, account: faunaRes.account })
+  }
+
+  const refreshHandler = faunaRes => {
+    if (faunaRes.code) {
+      refreshErrorHandler(faunaRes)
+    } else {
+      setExpressSession(req, faunaRes)
+      return res.json({ secret: faunaRes.tokens.access.secret, account: faunaRes.account })
+    }
+  }
+
+  const refreshErrorHandler = err => {
+    res.status(401)
+    console.log('INFO - Session - Refresh failed after retry', err)
+    res.json({ error: 'no session' })
+  }
+
+  if (req.session.accessToken) {
+    var ageSeconds = (new Date().getTime() - new Date(req.session.created).getTime()) / 1000
+    if (ageSeconds < ACCESS_TOKEN_LIFETIME_SECONDS / 2) {
+      console.log('INFO - Session - There is an active session with still valid token')
+      return res.json({ secret: req.session.accessToken, account: req.session.account })
+    } else {
+      console.log('INFO - Session - Access token is too old, refreshing')
+      return attemptRefresh().catch(err => {
+        const refreshErrorCode = getRefreshErrorCode(err)
+        if (refreshErrorCode === 'instance not found') {
+          attemptRefresh().catch(refreshErrorHandler)
+        } else {
+          refreshErrorHandler()
+        }
       })
-      .catch(err => {
-        console.log(err)
-        return res.json({ error: 'unauthorized' })
-      })
+    }
   } else {
     console.log('INFO - Session - there is no session active, cant refresh')
-    res.json(false)
+    res.json({ error: 'no session' })
   }
 })
 
 // **** Logout *****
-router.options('/accounts/logout', cors(corsOptions))
-router.post('/accounts/logout', cors(corsOptions), async function(req, res) {
+router.post('/logout', async function(req, res) {
   res.status(200)
 
   const logoutAllTokens = req.query.all
@@ -98,28 +145,72 @@ router.post('/accounts/logout', cors(corsOptions), async function(req, res) {
   try {
     const refreshToken = req.session.refreshToken
     if (refreshToken) {
-      const client = new faunadb.Client({
-        secret: refreshToken
-      })
-      let res = null
+      const client = getClient(refreshToken)
       if (logoutAllTokens) {
-        res = await client
-          .query(Call(q.Function('logout_all')))
+        await client
+          .query(Call(Function('logout'), true))
           .catch(err => console.log('Error logging out all sessions (access and refresh)', err))
       } else {
-        res = await client
-          .query(Call(q.Function('logout')))
+        await client
+          .query(Call(Function('logout'), false))
           .catch(err => console.log('Error logging out current session (access and refresh)', err))
       }
-      console.log('logout result', JSON.stringify(res, null, 2))
     }
-    req.session.refreshToken = null
-    req.session.destroy()
+    resetExpressSession(req)
     return res.json({ logout: true })
   } catch (error) {
     console.error('Error logging out', error)
     return res.json({ error: 'could not log out' })
   }
 })
+
+// **** Verify *****
+router.post('/accounts/verify', async function(req, res) {
+  res.status(200)
+  const client = getClient(process.env.BOOTSTRAP_KEY)
+
+  if (req.body.email) {
+    // create verification request
+    const { email } = req.body
+
+    return client
+      .query(Call('get_account_verification_token_by_email', email))
+      .then(faunaRes => {
+        if (faunaRes) {
+          sendAccountVerificationEmail(email, faunaRes.secret)
+        }
+        // provide no information to the enduser unless on internal errors.
+        return res.json(true)
+      })
+      .catch(err => handleVerificationError(err, res))
+  } else {
+    // verify an already started verification request
+    const { token } = req.body
+    const verificationClient = getClient(token)
+    return verificationClient.query(Call('verify_account')).then(faunaRes => {
+      setAccountExpressSession(req, faunaRes)
+      return res.json(faunaRes)
+    })
+  }
+})
+
+// **** Reset *****
+router.post('/accounts/password/reset', function(req, res, next) {
+  res.status(200)
+  // if there is an email parameter we are initiating the request.
+  requestPasswordReset(req, res)
+})
+
+function requestPasswordReset(req, res) {
+  const { email } = req.body
+  const client = getClient(process.env.BOOTSTRAP_KEY)
+  return client
+    .query(Call(Function('request_password_reset'), email))
+    .then(faunaRes => {
+      sendPasswordResetEmail(email, faunaRes.secret)
+      return res.json({ ok: true })
+    })
+    .catch(err => handleResetError(err, res))
+}
 
 module.exports = router

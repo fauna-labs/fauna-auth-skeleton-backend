@@ -1,0 +1,18 @@
+.notification-bar {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 40px;
+  background-color: rgba(0,0,0,0.05);
+  border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+.notification-bar a {
+  margin-left: 0.5em;
+  margin-right: 0.5em;
+}
+
+
+.notification-bar .bold {
+  font-weight: 900;
+}

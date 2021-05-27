@@ -3,7 +3,7 @@ import { useHistory } from 'react-router-dom'
 import { toast } from 'react-toastify'
 
 import SessionContext from './../context/session'
-import { faunaQueries } from '../fauna/query-manager'
+import { faunaAPI } from '../api/fauna-api'
 
 // Components
 const handleLogout = (event, faunaQueryFun, history, sessionContext) => {
@@ -28,20 +28,20 @@ const handleLogout = (event, faunaQueryFun, history, sessionContext) => {
 const Logout = props => {
   const history = useHistory()
   const sessionContext = useContext(SessionContext)
-  const { user } = sessionContext.state
+  const { loggedIn } = sessionContext.state
 
-  if (user) {
+  if (loggedIn) {
     return (
       <div className="form-container">
         <div className="form-title"> Logout </div>
         <div className="form-text">
-          Clicking logout will remove the session which essentially removes the token from the client and reverts to the
-          bootstrap token. After logging out, we can login again.
+          Clicking logout will remove the session which essentially removes the token from the
+          client and reverts to the bootstrap token. After logging out, we can login again.
         </div>
         <div className="form">
           <div className="input-row margin-top-50">
             <button
-              onClick={e => handleLogout(e, faunaQueries.logout, history, sessionContext)}
+              onClick={e => handleLogout(e, () => faunaAPI.logout(false), history, sessionContext)}
               className={'logout align-right'}
             >
               Log out this session
@@ -49,7 +49,7 @@ const Logout = props => {
           </div>
           <div className="input-row margin-top-50">
             <button
-              onClick={e => handleLogout(e, faunaQueries.logoutAll, history, sessionContext)}
+              onClick={e => handleLogout(e, () => faunaAPI.logout(true), history, sessionContext)}
               className={'logout align-right'}
             >
               Log out all sessions
