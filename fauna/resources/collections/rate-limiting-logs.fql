@@ -1,0 +1,1 @@
+CreateCollection({ name: 'rate_limiting_logs', ttl_days: 10 })

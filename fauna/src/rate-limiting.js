@@ -28,7 +28,7 @@ export const RATE_LIMITING = 'ERROR_RATE_LIMIT'
 export const CALL_LIMIT = 'ERROR_CALL_LIMIT'
 
 function CreateAccessLogEntry(action, identifier) {
-  return Create(Collection('access_logs'), {
+  return Create(Collection('rate_limiting_logs'), {
     data: {
       action: action,
       identity: identifier
@@ -40,7 +40,7 @@ export function AddRateLimiting(action, identifier, calls, perMilliSeconds) {
   return Let(
     {
       logsPage: Paginate(
-        Match(Index('access_logs_by_action_and_identity_ordered_by_ts'), action, identifier),
+        Match(Index('rate_limiting_logs_by_action_and_identity_ordered_by_ts'), action, identifier),
         {
           size: calls
         }
@@ -78,7 +78,7 @@ export function AddCallLimit(action, identifier, calls) {
   return Let(
     {
       logsPage: Paginate(
-        Match(Index('access_logs_by_action_and_identity_ordered_by_ts'), action, identifier),
+        Match(Index('rate_limiting_logs_by_action_and_identity_ordered_by_ts'), action, identifier),
         {
           size: calls
         }

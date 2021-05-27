@@ -1,6 +1,6 @@
 CreateIndex({
-  name: 'access_logs_by_action_and_identity_ordered_by_ts',
-  source: Collection('access_logs'),
+  name: 'rate_limiting_logs_by_action_and_identity_ordered_by_ts',
+  source: Collection('rate_limiting_logs'),
   terms: [
     {
       field: ['data', 'action']

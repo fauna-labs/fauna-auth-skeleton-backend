@@ -1,0 +1,16 @@
+CreateIndex({
+  "name": "rate_limiting_logs_by_action_and_identity_ordered_by_ts",
+  "source": Collection("rate_limiting_logs"),
+  "terms": [{
+    "field": ["data", "action"]
+  }, {
+    "field": ["data", "identity"]
+  }],
+  "values": [{
+    "field": ["ts"],
+    "reverse": true
+  }, {
+    "field": ["ref"]
+  }],
+  "serialized": false
+})
