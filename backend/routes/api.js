@@ -169,28 +169,27 @@ router.post('/accounts/verify', async function(req, res) {
   res.status(200)
   const client = getClient(process.env.BOOTSTRAP_KEY)
 
-  if (req.body.email) {
-    // create verification request
-    const { email } = req.body
+  try {
+    if (req.body.email) {
+      // create verification request
+      const { email } = req.body
 
-    return client
-      .query(Call('get_account_verification_token_by_email', email))
-      .then(faunaRes => {
-        if (faunaRes) {
-          sendAccountVerificationEmail(email, faunaRes.secret)
-        }
-        // provide no information to the enduser unless on internal errors.
-        return res.json(true)
-      })
-      .catch(err => handleVerificationError(err, res))
-  } else {
-    // verify an already started verification request
-    const { token } = req.body
-    const verificationClient = getClient(token)
-    return verificationClient.query(Call('verify_account')).then(faunaRes => {
+      const faunaRes = await client.query(Call('get_account_verification_token_by_email', email))
+      if (faunaRes) {
+        sendAccountVerificationEmail(email, faunaRes.secret)
+      }
+      // provide no information to the enduser unless on internal errors.
+      return res.json(true).catch(err => handleVerificationError(err, res))
+    } else {
+      // verify an already started verification request
+      const { token } = req.body
+      const verificationClient = getClient(token)
+      const faunaRes = await verificationClient.query(Call('verify_account'))
       setAccountExpressSession(req, faunaRes)
       return res.json(faunaRes)
-    })
+    }
+  } catch (error) {
+    return handleVerificationError(error)
   }
 })
 

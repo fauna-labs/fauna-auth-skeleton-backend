@@ -25,7 +25,7 @@ const Verify = () => {
         toast.info('Account verified')
       })
       .catch(err => handleLoadingError(err, setLoading, setError, toast))
-  }, [setLoading, setError])
+  }, [])
 
   if (loading) {
     return Loading()
