@@ -69,10 +69,15 @@ body {
     font-size: 20px;
     text-transform: uppercase;
     color: $soft-white;
-    font-weight: lighter;
+    font-weight: light;
 }
 
 .body-container .nav .link-container .highlighted {
-    color:$hard-white;
-    font-weight: 300;
+    color: $hard-white;
+    font-weight: 500;
+}
+
+.body-container .nav .link-container .disabled {
+    color: $soft-grey;
+    cursor: not-allowed;
 }
