@@ -1,0 +1,18 @@
+CreateRole({
+  "name": "loggedin",
+  "membership": [{
+    "resource": Collection("accounts"),
+    "predicate": Query(Lambda("ref", And(And(HasCurrentToken(), Equals(Select(["data", "type"], Get(CurrentToken()), false), "access")), Call("is_verified", Select(["data", "email"], Get(CurrentIdentity()))))))
+  }],
+  "privileges": [{
+    "resource": Function("get_all_dinos"),
+    "actions": {
+      "call": true
+    }
+  }, {
+    "resource": Function("change_password"),
+    "actions": {
+      "call": true
+    }
+  }]
+})

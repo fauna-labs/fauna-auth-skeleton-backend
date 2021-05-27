@@ -3,20 +3,33 @@ CreateFunction({
   body: Query(
     Lambda(
       ['email', 'password'],
-
-      Do(
-        Call('rate_limit', 'register', 'public', 100, 3600000),
-        Call('validate_email', Var('email')),
-        Call('validate_password', Var('password')),
-        Create(Collection('accounts'), {
-          // credentials is a special field, the contents will never be returned
-          // and will be encrypted. { password: ... } is the only format it currently accepts.
-          credentials: { password: Var('password') },
-          // everything you want to store in the document should be scoped under 'data'
-          data: {
-            email: Var('email')
-          }
-        })
+      Let(
+        {
+          logRegisters: Call('config_var', { path: ['logging', 'register'] })
+        },
+        Do(
+          Call('rate_limit', 'register', 'public', 100, 3600000),
+          Call('validate_email', Var('email')),
+          Call('validate_password', Var('password')),
+          Let(
+            {
+              result: Create(Collection('accounts'), {
+                // credentials is a special field, the contents will never be returned
+                // and will be encrypted. { password: ... } is the only format it currently accepts.
+                credentials: { password: Var('password') },
+                // everything you want to store in the document should be scoped under 'data'
+                data: {
+                  email: Var('email')
+                }
+              })
+            },
+            If(
+              Var('logRegisters'),
+              Do(Call('log', 'auth', 'register', Var('email')), Var('result')),
+              Var('result')
+            )
+          )
+        )
       )
     )
   ),

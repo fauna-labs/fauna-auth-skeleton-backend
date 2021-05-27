@@ -1,5 +1,5 @@
 CreateFunction({
-  name: 'reset_logs',
+  name: 'reset_access_logs',
   body: Query(
     Lambda(
       ['action', 'identifier'],

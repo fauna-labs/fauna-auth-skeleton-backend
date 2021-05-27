@@ -6,6 +6,5 @@ CreateIndex({
       field: ['data', 'rarity']
     }
   ],
-  unique: true,
   serialized: true
 })

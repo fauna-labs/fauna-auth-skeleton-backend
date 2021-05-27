@@ -14,7 +14,12 @@ export const sessionReducer = (state, action) => {
       return { user: null, loggedIn: false }
     }
     case 'verify': {
-      return { user: action.data, loggedIn: true }
+      if (state.loggedIn) {
+        return { user: action.data, loggedIn: true }
+      } else {
+        window.location.reload()
+        return state
+      }
     }
     default: {
       throw new Error(`Unhandled action type: ${action.type}`)

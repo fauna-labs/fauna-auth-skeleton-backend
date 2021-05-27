@@ -15,6 +15,7 @@ const Home = () => {
   const { user, loggedIn } = sessionContext.state
 
   useEffect(() => {
+    setLoading(true)
     getDinos(user, loggedIn, sessionContext, setLoading, setDinos)
   }, [user, history, sessionContext])
 

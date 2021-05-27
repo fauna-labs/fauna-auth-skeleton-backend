@@ -1,9 +1,0 @@
-CreateRole({
-  name: "frontend_public_role",
-  privileges: [{
-    resource: Collection("dinos"),
-    actions: {
-      read: Query(Lambda(["dinoReference"], Equals(Select(["data", "rarity"], Get(Var("dinoReference"))), "common")))
-    }
-  }]
-})

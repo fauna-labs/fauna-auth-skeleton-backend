@@ -1,7 +1,7 @@
 // Instead of executing queries on the frontend, we will execute some of them in the backend.
 import cors from 'cors'
 import express from 'express'
-import fauna, { Call, Function } from 'faunadb'
+import { Call, Function } from 'faunadb'
 
 import {
   getRefreshErrorCode,
@@ -11,7 +11,12 @@ import {
   handleVerificationError
 } from './api-errors'
 import { sendPasswordResetEmail, sendAccountVerificationEmail } from './../util/emails'
-import { resetExpressSession, setExpressSession } from './api-helpers'
+import {
+  resetExpressSession,
+  setExpressSession,
+  getClient,
+  setAccountExpressSession
+} from './api-helpers'
 import {
   ACCESS_TOKEN_LIFETIME_SECONDS,
   REFRESH_TOKEN_LIFETIME_SECONDS
@@ -32,9 +37,7 @@ router.use(cors(corsOptions))
 // **** Login *****
 router.post('/login', function(req, res, next) {
   res.status(200)
-  const client = new fauna.Client({
-    secret: process.env.BOOTSTRAP_KEY
-  })
+  const client = getClient(process.env.BOOTSTRAP_KEY)
 
   const { email, password } = req.body
   return client
@@ -67,9 +70,7 @@ router.post('/login', function(req, res, next) {
 
 router.post('/register', function(req, res, next) {
   res.status(200)
-  const client = new fauna.Client({
-    secret: process.env.BOOTSTRAP_KEY
-  })
+  const client = getClient(process.env.BOOTSTRAP_KEY)
 
   const { email, password } = req.body
 
@@ -86,9 +87,7 @@ router.post('/register', function(req, res, next) {
 router.post('/refresh', function(req, res, next) {
   res.status(200)
 
-  const client = new fauna.Client({
-    secret: req.session.refreshToken
-  })
+  const client = getClient(req.session.refreshToken)
 
   const attemptRefresh = () => {
     return client.query(Call(Function('refresh'))).then(faunaRes => {
@@ -146,9 +145,7 @@ router.post('/logout', async function(req, res) {
   try {
     const refreshToken = req.session.refreshToken
     if (refreshToken) {
-      const client = new fauna.Client({
-        secret: refreshToken
-      })
+      const client = getClient(refreshToken)
       if (logoutAllTokens) {
         await client
           .query(Call(Function('logout'), true))
@@ -170,22 +167,31 @@ router.post('/logout', async function(req, res) {
 // **** Verify *****
 router.post('/accounts/verify', async function(req, res) {
   res.status(200)
-  const client = new fauna.Client({
-    secret: process.env.BOOTSTRAP_KEY
-  })
+  const client = getClient(process.env.BOOTSTRAP_KEY)
 
-  const { email } = req.body
+  if (req.body.email) {
+    // create verification request
+    const { email } = req.body
 
-  return client
-    .query(Call('get_account_verification_token_by_email', email))
-    .then(faunaRes => {
-      if (faunaRes) {
-        sendAccountVerificationEmail(email, faunaRes.secret)
-      }
-      // provide no information to the enduser unless on internal errors.
-      return res.json(true)
+    return client
+      .query(Call('get_account_verification_token_by_email', email))
+      .then(faunaRes => {
+        if (faunaRes) {
+          sendAccountVerificationEmail(email, faunaRes.secret)
+        }
+        // provide no information to the enduser unless on internal errors.
+        return res.json(true)
+      })
+      .catch(err => handleVerificationError(err, res))
+  } else {
+    // verify an already started verification request
+    const { token } = req.body
+    const verificationClient = getClient(token)
+    return verificationClient.query(Call('verify_account')).then(faunaRes => {
+      setAccountExpressSession(req, faunaRes)
+      return res.json(faunaRes)
     })
-    .catch(err => handleVerificationError(err, res))
+  }
 })
 
 // **** Reset *****
@@ -197,13 +203,10 @@ router.post('/accounts/password/reset', function(req, res, next) {
 
 function requestPasswordReset(req, res) {
   const { email } = req.body
-  const client = new fauna.Client({
-    secret: process.env.BOOTSTRAP_KEY
-  })
+  const client = getClient(process.env.BOOTSTRAP_KEY)
   return client
     .query(Call(Function('request_password_reset'), email))
     .then(faunaRes => {
-      console.log(faunaRes, email)
       sendPasswordResetEmail(email, faunaRes.secret)
       return res.json({ ok: true })
     })

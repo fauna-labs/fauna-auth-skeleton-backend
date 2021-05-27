@@ -1,0 +1,9 @@
+CreateRole({
+  "name": "frontend_public_role",
+  "privileges": [{
+    "resource": Function("get_all_dinos"),
+    "actions": {
+      "call": true
+    }
+  }]
+})

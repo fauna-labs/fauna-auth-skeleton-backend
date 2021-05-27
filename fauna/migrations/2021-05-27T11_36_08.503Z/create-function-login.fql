@@ -1,0 +1,52 @@
+CreateFunction({
+  "name": "login",
+  "body": Query(Lambda(["email", "password"], Let([{
+    "maxFailedLogins": Call("config_var", {
+      "path": ["rate_limiting", "failed_logins", "max"]
+    })
+  }, {
+    "rateLimitFailedLogins": Call("config_var", {
+      "path": ["rate_limiting", "failed_logins", "enabled"]
+    })
+  }, {
+    "logLogins": Call("config_var", {
+      "path": ["logging", "login"]
+    })
+  }], Do(If(Var("rateLimitFailedLogins"), Call("call_limit", ["failed_login", Var("email"), Var("maxFailedLogins")]), false), Let([{
+    "loginResult": If(Exists(Match(Index("accounts_by_email"), Var("email"))), If(Identify(Select(["ref"], Get(Match(Index("accounts_by_email"), Var("email")))), Var("password")), Let([{
+      "account": Get(Match(Index("accounts_by_email"), Var("email")))
+    }, {
+      "accountRef": Select(["ref"], Var("account"))
+    }, {
+      "tokens": Let([{
+        "refresh": Create(Tokens(), {
+          "instance": Var("accountRef"),
+          "data": {
+            "type": "refresh",
+            "used": false,
+            "sessionId": If(And(HasCurrentToken(), Equals(Select(["data", "type"], Get(CurrentToken()), false), "refresh")), Select(["data", "sessionId"], Get(CurrentToken())), NewId()),
+            "validUntil": TimeAdd(Now(), 28800, "seconds"),
+            "loggedOut": false
+          },
+          "ttl": TimeAdd(Now(), 604800, "seconds")
+        })
+      }, {
+        "access": Create(Tokens(), {
+          "instance": Var("accountRef"),
+          "data": {
+            "type": "access",
+            "refresh": Select(["ref"], Var("refresh"))
+          },
+          "ttl": TimeAdd(Now(), 600, "seconds")
+        })
+      }], {
+        "refresh": Var("refresh"),
+        "access": Var("access")
+      })
+    }], {
+      "tokens": Var("tokens"),
+      "account": Var("account")
+    }), false), false)
+  }], If(Equals(Var("loginResult"), false), Do(If(Var("logLogins"), Call("log", ["auth", "login", Var("email")]), false), false), Do(If(Var("logLogins"), Call("log", ["auth", "login", Var("email")]), false), If(Var("rateLimitFailedLogins"), Call("reset_access_logs", ["failed_login", Var("email")]), false), Var("loginResult")))))))),
+  "role": "admin"
+})

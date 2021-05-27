@@ -47,14 +47,13 @@ class FaunaAPI {
     return await backendAPI.resendVerificationEmail(email)
   }
 
+  async verifyEmail(token) {
+    return await backendAPI.verifyEmail(token)
+  }
+
   /** ******* Calls directly to Fauna*********/
   async changePassword(oldPassword, newPassword) {
     return this.client.query(Call('change_password', oldPassword, newPassword))
-  }
-
-  async verifyEmail(token) {
-    const verificationClient = this.getClient(token)
-    return verificationClient.query(Call('verify_account'))
   }
 
   async resetPassword(password, token) {
@@ -110,7 +109,14 @@ class FaunaAPI {
     if (process.env.REACT_APP_LOCAL___FAUNADB_PORT)
       opts.port = process.env.REACT_APP_LOCAL___FAUNADB_PORT
     opts.headers = { 'X-Fauna-Source': 'fauna-auth-skeleton-backend' }
-    return new fauna.Client(opts)
+
+    const client = new fauna.Client(opts)
+    if (this.client) {
+      // To ensure that the new client sees everything the old client saw.
+      const lastTxTime = this.client.getLastTxnTime()
+      client.syncLastTxnTime(lastTxTime)
+    }
+    return client
   }
 }
 

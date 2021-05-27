@@ -25,7 +25,6 @@ const NotificationBar = props => {
 
     event.preventDefault()
   }
-
   if (user && !user.verified) {
     return (
       <div className="notification-bar">

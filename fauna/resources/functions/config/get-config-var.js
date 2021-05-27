@@ -12,10 +12,18 @@ import {
   Collection
 } from 'faunadb'
 
-const defaultConfig = { call_limits: { max_failed_logins: 5 } }
+const defaultConfig = {
+  rate_limiting: {
+    failed_logins: { max: 3, enabled: true },
+    register: { calls: 100, per_milliseconds: 3600000 },
+    get_dinos_public: { calls: 20, per_milliseconds: 60000 },
+    get_dinos_private: { calls: 3, per_milliseconds: 60000 }
+  },
+  logging: { login: true, register: true, logout: true, refresh: true }
+}
 
 export default CreateFunction({
-  name: 'get_config_var',
+  name: 'config_var',
   body: Query(
     Lambda(
       ['pathObj'],

@@ -37,7 +37,7 @@ const Layout = props => {
 
   useEffect(
     () => {
-      if (location.pathname.includes('reset') || location.pathname.includes('verify')) {
+      if (location.pathname.includes('reset')) {
         setLoading(false)
       } else {
         console.log('INFO - First page load, retrieving session', location)

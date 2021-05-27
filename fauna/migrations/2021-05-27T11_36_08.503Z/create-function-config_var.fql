@@ -1,0 +1,59 @@
+CreateFunction({
+  "name": "config_var",
+  "body": Query(Lambda(["pathObj"], Let([{
+    "configPath": Select(["path"], Var("pathObj"))
+  }], Select(Var("configPath"), Let([{
+    "configSet": Documents(Collection("config"))
+  }], If(Exists(Var("configSet")), Select(["data"], Get(Var("configSet"))), {
+    "rate_limiting": {
+      "failed_logins": {
+        "max": 3,
+        "enabled": true
+      },
+      "register": {
+        "calls": 100,
+        "per_milliseconds": 3600000
+      },
+      "get_dinos_public": {
+        "calls": 20,
+        "per_milliseconds": 60000
+      },
+      "get_dinos_private": {
+        "calls": 3,
+        "per_milliseconds": 60000
+      }
+    },
+    "logging": {
+      "login": true,
+      "register": true,
+      "logout": true,
+      "refresh": true
+    }
+  })), Select(Var("configPath"), {
+    "rate_limiting": {
+      "failed_logins": {
+        "max": 3,
+        "enabled": true
+      },
+      "register": {
+        "calls": 100,
+        "per_milliseconds": 3600000
+      },
+      "get_dinos_public": {
+        "calls": 20,
+        "per_milliseconds": 60000
+      },
+      "get_dinos_private": {
+        "calls": 3,
+        "per_milliseconds": 60000
+      }
+    },
+    "logging": {
+      "login": true,
+      "register": true,
+      "logout": true,
+      "refresh": true
+    }
+  }))))),
+  "role": "server"
+})

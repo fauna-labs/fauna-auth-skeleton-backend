@@ -1,0 +1,64 @@
+CreateFunction({
+  "name": "logout",
+  "body": Query(Lambda(["all"], Let([{
+    "logLogouts": Call("config_var", {
+      "path": ["logging", "logout"]
+    })
+  }], Do(If(And(Select(["data", "used"], Get(CurrentToken())), Not(GT(Select(["data", "gracePeriodUntil"], Get(CurrentToken())), Now()))), Do(Create(Collection("anomalies"), {
+    "data": {
+      "error": {
+        "code": "REFRESH_TOKEN_REUSE",
+        "message": "The refresh token was used outside of the grace period which indicates that it was leaked"
+      },
+      "token": CurrentToken(),
+      "account": CurrentIdentity(),
+      "action": "logout"
+    }
+  }), {
+    "code": "REFRESH_TOKEN_REUSE",
+    "message": "The refresh token was used outside of the grace period which indicates that it was leaked"
+  }), If(GT(Select(["data", "validUntil"], Get(CurrentToken())), Now()), If(Not(Select(["data", "loggedOut"], Get(CurrentToken()))), If(Var("all"), Let([{
+    "refreshTokens": Paginate(Match(Index("tokens_by_instance_type_and_loggedout"), [CurrentIdentity(), "refresh", false]), {
+      "size": 100000
+    })
+  }], Map(Var("refreshTokens"), Lambda(["token"], Do(If(Exists(Match(Index("access_token_by_refresh_token"), Var("token"))), Delete(Select(["ref"], Get(Match(Index("access_token_by_refresh_token"), Var("token"))))), false), Update(Var("token"), {
+    "data": {
+      "loggedOut": true
+    }
+  }))))), Let([{
+    "refreshTokens": Paginate(Match(Index("tokens_by_instance_sessionid_type_and_loggedout"), [CurrentIdentity(), Select(["data", "sessionId"], Get(CurrentToken())), "refresh", false]), {
+      "size": 100000
+    })
+  }], Map(Var("refreshTokens"), Lambda(["token"], Do(If(Exists(Match(Index("access_token_by_refresh_token"), Var("token"))), Delete(Select(["ref"], Get(Match(Index("access_token_by_refresh_token"), Var("token"))))), false), Update(Var("token"), {
+    "data": {
+      "loggedOut": true
+    }
+  })))))), Do(Create(Collection("anomalies"), {
+    "data": {
+      "error": {
+        "code": "REFRESH_TOKEN_USED_AFTER_LOGOUT",
+        "message": "The refresh token was used after logging out"
+      },
+      "token": CurrentToken(),
+      "account": CurrentIdentity(),
+      "action": "logout"
+    }
+  }), {
+    "code": "REFRESH_TOKEN_USED_AFTER_LOGOUT",
+    "message": "The refresh token was used after logging out"
+  })), Do(Create(Collection("anomalies"), {
+    "data": {
+      "error": {
+        "code": "REFRESH_TOKEN_EXPIRED",
+        "message": "The refresh token was expired"
+      },
+      "token": CurrentToken(),
+      "account": CurrentIdentity(),
+      "action": "logout"
+    }
+  }), {
+    "code": "REFRESH_TOKEN_EXPIRED",
+    "message": "The refresh token was expired"
+  }))), If(Var("logLogouts"), Call("log", ["auth", "logout", Select(["data", "email"], Get(CurrentIdentity()))]), false))))),
+  "role": "server"
+})

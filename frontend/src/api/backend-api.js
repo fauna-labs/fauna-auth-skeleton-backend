@@ -33,6 +33,12 @@ export function resendVerificationEmail(email) {
   })
 }
 
+export function verifyEmail(token) {
+  return postData(urljoin(process.env.REACT_APP_LOCAL___API, 'api', 'accounts/verify'), {
+    token
+  })
+}
+
 async function postData(url, data = {}) {
   const response = await fetch(url, {
     method: 'POST',

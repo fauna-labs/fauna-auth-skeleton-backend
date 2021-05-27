@@ -37,8 +37,8 @@ const Register = () => {
   } else {
     return (
       <div className="form-container">
-        <div className="form-title"> Login </div>
-        <div className="form-text">You are already logged in, logout first!</div>
+        <div className="form-title"> Register </div>
+        <div className="form-text">You are logged in, logout first!</div>
       </div>
     )
   }

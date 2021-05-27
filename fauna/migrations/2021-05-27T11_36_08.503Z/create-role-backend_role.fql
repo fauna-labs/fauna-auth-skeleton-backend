@@ -1,0 +1,24 @@
+CreateRole({
+  "name": "backend_role",
+  "privileges": [{
+    "resource": Function("register_with_verification"),
+    "actions": {
+      "call": true
+    }
+  }, {
+    "resource": Function("get_account_verification_token_by_email"),
+    "actions": {
+      "call": true
+    }
+  }, {
+    "resource": Function("login"),
+    "actions": {
+      "call": true
+    }
+  }, {
+    "resource": Function("request_password_reset"),
+    "actions": {
+      "call": true
+    }
+  }]
+})
