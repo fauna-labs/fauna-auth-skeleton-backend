@@ -1,6 +1,19 @@
+export const handleRefreshError = (err, res) => {
+  res.status(401)
+  console.log('INFO - Session - Refresh failed after retry', err)
+  res.json({ error: 'no session' })
+}
+export const handleLogoutError = (err, res) => {
+  const errorAndCode = retrieveErrorAndDescription(err)
+  if (errorAndCode.code === 'unauthorized') {
+    console.log('Already logged out', err)
+  } else {
+    console.log('Error logging out current session (access and refresh)', err)
+  }
+}
+
 export const handleLoginError = (err, res) => {
   const codeAndDescription = retrieveErrorAndDescription(err)
-
   if (codeAndDescription && codeAndDescription.description) {
     res.status(200).send({ error: codeAndDescription.description })
     console.log(err)
@@ -12,7 +25,6 @@ export const handleLoginError = (err, res) => {
 
 export const handleRegisterError = (err, res) => {
   const codeAndDescription = retrieveErrorAndDescription(err)
-  console.log(codeAndDescription)
   if (codeAndDescription && codeAndDescription.code.includes('instance not unique')) {
     res.status(400).send({ error: 'An account with that e-mail or handle already exists' })
   } else if (

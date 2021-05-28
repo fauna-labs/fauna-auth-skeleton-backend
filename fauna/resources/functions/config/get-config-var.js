@@ -19,7 +19,15 @@ const defaultConfig = {
     get_dinos_public: { calls: 20, per_milliseconds: 60000 },
     get_dinos_private: { calls: 3, per_milliseconds: 60000 }
   },
-  logging: { login: true, register: true, logout: true, refresh: true }
+  logging: { login: true, register: true, logout: true, refresh: true },
+  session: {
+    access_tokens: { lifetime_seconds: 600 },
+    refresh_tokens: {
+      reclaimtime_seconds: 604800,
+      lifetime_seconds: 28800,
+      graceperiod_seconds: 20
+    }
+  }
 }
 
 export default CreateFunction({

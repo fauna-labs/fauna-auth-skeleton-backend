@@ -33,48 +33,62 @@ const Layout = props => {
   const location = useLocation()
   const sessionContext = useContext(SessionContext)
   const [isLoading, setLoading] = useState('session')
-  const { loggedIn } = sessionContext.state
+  const { loggedIn, verified, sessionLifetime } = sessionContext.state
 
-  const refreshOnce = () => {
+  const refreshOnce = async () => {
+    console.log('INFO - Refreshing on load', new Date())
     if (location.pathname.includes('reset')) {
       setLoading(false)
     } else {
-      console.log('INFO - First page load, retrieving session', location)
-      faunaAPI
-        .refreshToken()
-        .then(res => {
-          if (!res.error) {
-            console.log('INFO - Session found, logging in')
-            sessionContext.dispatch({ type: 'login', data: res.account })
-          } else {
-            console.log('INFO - There is no session')
-          }
-          setLoading(false)
-        })
-        .catch(err => {
-          console.log(err)
-          setLoading(false)
-        })
+      try {
+        const res = await faunaAPI.refreshToken()
+        if (!res.error) {
+          console.log('INFO - Session found, logging in', res)
+          sessionContext.dispatch({
+            type: 'login',
+            account: res.account.data,
+            sessionLifetime: res.sessionLifetime
+          })
+        } else {
+          console.log('INFO - There is no session')
+        }
+        setLoading(false)
+      } catch (err) {
+        console.log(err)
+        setLoading(false)
+      }
     }
   }
 
-  const refreshSilent = () => {
-    console.log('INFO - silent refreshing session, well... not so silent given this log')
-    faunaAPI.refreshToken().catch(err => {
+  const refreshSilent = async () => {
+    console.log(
+      'INFO - silent refreshing session, well... not so silent given this log',
+      new Date()
+    )
+    try {
+      const res = await faunaAPI.refreshToken()
+      sessionContext.dispatch({
+        type: 'login',
+        account: res.account.data,
+        sessionLifetime: res.sessionLifetime
+      })
+    } catch (err) {
       console.log(err)
-    })
+    }
   }
 
-  useEffect(
-    () => {
-      refreshOnce()
-      const id = setInterval(() => refreshSilent(), 30000) // 5 minutes
+  useEffect(() => {
+    if (loggedIn) {
+      var id = null
+      const delaySeconds = sessionLifetime * 0.75
+      setTimeout(() => {
+        id = setInterval(() => refreshSilent(), delaySeconds * 1000)
+      }, delaySeconds)
       return () => clearInterval(id)
-    },
-    [
-      // run only once
-    ]
-  )
+    } else {
+      refreshOnce()
+    }
+  }, [loggedIn, verified])
 
   const bodyContent = () => {
     if (isLoading) {

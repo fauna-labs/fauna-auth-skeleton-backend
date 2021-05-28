@@ -1,5 +1,6 @@
 import { retrieveErrorAndDescription } from '../../../backend/routes/api-errors'
 import { RATE_LIMITING } from '../../../fauna/src/rate-limiting'
+import { faunaAPI } from './fauna-api'
 
 export const handleChangePasswordError = (err, toast) => {
   const codeAndDescription = retrieveErrorAndDescription(err)
@@ -24,7 +25,7 @@ export const handleLoadingError = (err, setLoading, setError, toast) => {
   }
 }
 
-export const handleDataLoadingError = (err, user, sessionContext, setLoading, toast) => {
+export const handleDataLoadingError = (err, loggedIn, sessionContext, setLoading, toast) => {
   const errorAndCode = retrieveErrorAndDescription(err)
 
   if (errorAndCode && errorAndCode.code === 'transaction aborted') {
@@ -32,8 +33,9 @@ export const handleDataLoadingError = (err, user, sessionContext, setLoading, to
       toast.warn('Rate limiting')
     }
   } else if (errorAndCode && errorAndCode.code === 'unauthorized') {
-    if (user) {
-      sessionContext.dispatch({ type: 'logout', data: null })
+    if (loggedIn) {
+      // Make sure to reset httpOnly cookie.
+      faunaAPI.logout()
       toast.warn('You have been logged out')
     } else {
       toast.error(err.description)

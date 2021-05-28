@@ -6,7 +6,7 @@ import { faunaAPI } from '../api/fauna-api'
 const NotificationBar = props => {
   // MOVE TO WARNING BAR..
   const sessionContext = useContext(SessionContext)
-  const { user, loggedIn } = sessionContext.state
+  const { verified, loggedIn, user } = sessionContext.state
 
   const handleResendVerification = event => {
     faunaAPI
@@ -25,7 +25,7 @@ const NotificationBar = props => {
 
     event.preventDefault()
   }
-  if (user && !user.verified) {
+  if (!verified) {
     return (
       <div className="notification-bar">
         <span className="bold"> Logged in, not verified</span>, you can only see public dinos,

@@ -5,7 +5,12 @@ const SessionContext = React.createContext({})
 export const sessionReducer = (state, action) => {
   switch (action.type) {
     case 'login': {
-      return { user: action.data, loggedIn: true }
+      return {
+        user: action.account,
+        loggedIn: true,
+        sessionLifetime: action.sessionLifetime,
+        verified: action.account.verified
+      }
     }
     case 'register': {
       return { user: action.data }
@@ -15,9 +20,13 @@ export const sessionReducer = (state, action) => {
     }
     case 'verify': {
       if (state.loggedIn) {
-        return { user: action.data, loggedIn: true }
+        return {
+          user: action.account,
+          loggedIn: state.loggedIn,
+          sessionLifetime: state.sessionLifetime,
+          verified: action.account.verified
+        }
       } else {
-        window.location.reload()
         return state
       }
     }

@@ -61,8 +61,8 @@ class FaunaAPI {
     return resetClient.query(Call('reset_password', password))
   }
 
-  async getDinos(user, loggedIn) {
-    if (loggedIn && user && user.verified) {
+  async getDinos(verified, loggedIn) {
+    if (loggedIn && verified) {
       console.log('INFO - Retrieving dinos for logged in user with retry')
       return await this.callWithRefreshRetry(() => this.client.query(Call('get_all_dinos')))
     } else {

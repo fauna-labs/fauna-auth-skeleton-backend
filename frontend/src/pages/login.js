@@ -20,7 +20,11 @@ const handleLogin = (event, username, password, history, sessionContext) => {
         toast.error('Login failed')
       } else {
         toast.success('Login successful')
-        sessionContext.dispatch({ type: 'login', data: res.account.data })
+        sessionContext.dispatch({
+          type: 'login',
+          account: res.account.data,
+          sessionLifetime: res.sessionLifetime
+        })
         history.push('/')
       }
     })

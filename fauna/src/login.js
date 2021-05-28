@@ -1,4 +1,4 @@
-import { Let, Var, Select, Match, Index, If, Get, Identify, Exists } from 'faunadb'
+import { Let, Var, Select, Match, Index, If, Get, Identify, Exists, Call } from 'faunadb'
 import { CreateAccessAndRefreshToken } from './tokens'
 
 export function LoginAccount(
@@ -55,7 +55,10 @@ function CreateTokensForAccount(
     },
     {
       tokens: Var('tokens'),
-      account: Var('account')
+      account: Var('account'),
+      accessTokenLifetimeSeconds: Call('config_var', {
+        path: ['session', 'access_tokens', 'lifetime_seconds']
+      })
     }
   )
 }

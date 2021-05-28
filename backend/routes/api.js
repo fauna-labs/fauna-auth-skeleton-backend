@@ -4,8 +4,9 @@ import express from 'express'
 import { Call, Function } from 'faunadb'
 
 import {
-  getRefreshErrorCode,
   handleLoginError,
+  handleLogoutError,
+  handleRefreshError,
   handleRegisterError,
   handleResetError,
   handleVerificationError
@@ -17,10 +18,6 @@ import {
   getClient,
   setAccountExpressSession
 } from './api-helpers'
-import {
-  ACCESS_TOKEN_LIFETIME_SECONDS,
-  REFRESH_TOKEN_LIFETIME_SECONDS
-} from '../../fauna/src/tokens'
 
 const router = express.Router()
 const corsOptions = {
@@ -29,7 +26,7 @@ const corsOptions = {
   optionsSuccessStatus: 200,
   credentials: true,
   allowedHeaders: ['Content-Type, Set-Cookie, *'],
-  maxAge: REFRESH_TOKEN_LIFETIME_SECONDS * 1000
+  maxAge: 86400 * 1000 // 24 hours, increase along with the refresh token if longer sessions are desired .
 }
 
 router.use(cors(corsOptions))
@@ -59,7 +56,11 @@ router.post('/login', function(req, res, next) {
 
         // Then we send the ACCESS token to the frontend to be kept in memory (this also needs to happen over https in a production app)
         // To make sure that the frontend can talk to FaunaDB directly. The ACCESS token is short-lived.
-        const result = { account: faunaRes.account, secret: faunaRes.tokens.access.secret }
+        const result = {
+          account: faunaRes.account,
+          secret: faunaRes.tokens.access.secret,
+          sessionLifetime: faunaRes.accessTokenLifetimeSeconds
+        }
         return res.json(result)
       }
     })
@@ -97,34 +98,29 @@ router.post('/refresh', function(req, res, next) {
 
   const refreshHandler = faunaRes => {
     if (faunaRes.code) {
-      refreshErrorHandler(faunaRes)
+      handleRefreshError(faunaRes, res)
     } else {
       setExpressSession(req, faunaRes)
-      return res.json({ secret: faunaRes.tokens.access.secret, account: faunaRes.account })
+      return res.json({
+        secret: faunaRes.tokens.access.secret,
+        account: faunaRes.account,
+        sessionLifetime: faunaRes.accessTokenLifetimeSeconds
+      })
     }
-  }
-
-  const refreshErrorHandler = err => {
-    res.status(401)
-    console.log('INFO - Session - Refresh failed after retry', err)
-    res.json({ error: 'no session' })
   }
 
   if (req.session.accessToken) {
     var ageSeconds = (new Date().getTime() - new Date(req.session.created).getTime()) / 1000
-    if (ageSeconds < ACCESS_TOKEN_LIFETIME_SECONDS / 2) {
+    if (ageSeconds < req.session.accessTokenLifetimeSeconds / 2) {
       console.log('INFO - Session - There is an active session with still valid token')
-      return res.json({ secret: req.session.accessToken, account: req.session.account })
+      return res.json({
+        secret: req.session.accessToken,
+        account: { data: req.session.account },
+        sessionLifetime: req.session.accessTokenLifetimeSeconds
+      })
     } else {
       console.log('INFO - Session - Access token is too old, refreshing')
-      return attemptRefresh().catch(err => {
-        const refreshErrorCode = getRefreshErrorCode(err)
-        if (refreshErrorCode === 'instance not found') {
-          attemptRefresh().catch(refreshErrorHandler)
-        } else {
-          refreshErrorHandler()
-        }
-      })
+      return attemptRefresh().catch(err => handleRefreshError(err, res))
     }
   } else {
     console.log('INFO - Session - there is no session active, cant refresh')
@@ -136,8 +132,7 @@ router.post('/refresh', function(req, res, next) {
 router.post('/logout', async function(req, res) {
   res.status(200)
 
-  const logoutAllTokens = req.query.all
-
+  const logoutAllTokens = req.body.all
   // Refresh tokens are linked to sessions.
   // let's also invalidate the refreshToken with the same logout function.
   // Since we use a different client with a different token it will act on
@@ -149,11 +144,11 @@ router.post('/logout', async function(req, res) {
       if (logoutAllTokens) {
         await client
           .query(Call(Function('logout'), true))
-          .catch(err => console.log('Error logging out all sessions (access and refresh)', err))
+          .catch(err => handleLogoutError(err, true))
       } else {
         await client
           .query(Call(Function('logout'), false))
-          .catch(err => console.log('Error logging out current session (access and refresh)', err))
+          .catch(err => handleLogoutError(err, true))
       }
     }
     resetExpressSession(req)

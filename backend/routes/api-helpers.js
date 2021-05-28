@@ -10,6 +10,7 @@ export function setExpressSession(req, faunaRes) {
   req.session.refreshToken = faunaRes.tokens.refresh.secret
   req.session.accessToken = faunaRes.tokens.access.secret
   req.session.account = faunaRes.account.data
+  req.session.accessTokenLifetimeSeconds = faunaRes.accessTokenLifetimeSeconds
   req.session.created = Date.now()
 }
 

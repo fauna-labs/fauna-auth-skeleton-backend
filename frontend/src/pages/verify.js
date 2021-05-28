@@ -21,7 +21,7 @@ const Verify = () => {
       .verifyEmail(verification)
       .then(res => {
         setLoading(false)
-        sessionContext.dispatch({ type: 'verify', data: res.data })
+        sessionContext.dispatch({ type: 'verify', account: res.data })
         toast.info('Account verified')
       })
       .catch(err => handleLoadingError(err, setLoading, setError, toast))

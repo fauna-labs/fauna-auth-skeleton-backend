@@ -12,12 +12,12 @@ const Home = () => {
   const [isLoading, setLoading] = useState(false)
   const history = useHistory()
   const sessionContext = useContext(SessionContext)
-  const { user, loggedIn } = sessionContext.state
+  const { verified, loggedIn } = sessionContext.state
 
   useEffect(() => {
     setLoading(true)
-    getDinos(user, loggedIn, sessionContext, setLoading, setDinos)
-  }, [user, history, sessionContext])
+    getDinos(verified, loggedIn, sessionContext, setLoading, setDinos)
+  }, [history])
 
   if (isLoading) {
     return Loading(isLoading)
@@ -38,9 +38,9 @@ const Home = () => {
   }
 }
 
-async function getDinos(user, loggedIn, sessionContext, setLoading, setDinos) {
+async function getDinos(verified, loggedIn, sessionContext, setLoading, setDinos) {
   return faunaAPI
-    .getDinos(user, loggedIn)
+    .getDinos(verified, loggedIn)
     .then(res => {
       if (!res.error) {
         setDinos(res)
@@ -49,7 +49,7 @@ async function getDinos(user, loggedIn, sessionContext, setLoading, setDinos) {
         setLoading(false)
       }
     })
-    .catch(err => handleDataLoadingError(err, user, sessionContext, setLoading, toast))
+    .catch(err => handleDataLoadingError(err, loggedIn, sessionContext, setLoading, toast))
 }
 
 function showDinos(dinos) {

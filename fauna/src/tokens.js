@@ -21,7 +21,8 @@ import {
   GT,
   CurrentIdentity,
   Not,
-  If
+  If,
+  Call
 } from 'faunadb'
 
 import {
@@ -31,15 +32,23 @@ import {
   REFRESH_TOKEN_USED_AFTER_LOGOUT
 } from './anomalies'
 
-export const ACCESS_TOKEN_LIFETIME_SECONDS = 600 // 10 minutes
+const accessLifetime = Call('config_var', {
+  path: ['session', 'access_tokens', 'lifetime_seconds']
+})
 // lifetome of the token makes the refresh token unusable after this lifetime since
 // the code explicitely checks that lifetime before allowing a refresh token to refresh.
-export const REFRESH_TOKEN_LIFETIME_SECONDS = 28800 // 8 hours
+const refreshLifetime = Call('config_var', {
+  path: ['session', 'refresh_tokens', 'lifetime_seconds']
+})
 // reclaim time deletes the token which makes it unable to detect leaked tokens.
 // which is why it is set rather high.
-export const REFRESH_TOKEN_RECLAIMTIME_SECONDS = 604800 // 1 week
+const refreshReclaimTime = Call('config_var', {
+  path: ['session', 'refresh_tokens', 'reclaimtime_seconds']
+})
 // when a refresh token is refreshed itself, allow a grace period to make sure parallel requests work.
-export const GRACE_PERIOD_SECONDS = 20
+const gracePeriod = Call('config_var', {
+  path: ['session', 'refresh_tokens', 'graceperiod_seconds']
+})
 
 /********************************************
   Creation of tokens
@@ -56,7 +65,7 @@ export function CreateAccessToken(accountRef, refreshTokenRef, ttlSeconds) {
       refresh: refreshTokenRef
     },
     // access tokens live for 10 minutes, which is typically a good livetime for short-lived tokens.
-    ttl: TimeAdd(Now(), ttlSeconds || ACCESS_TOKEN_LIFETIME_SECONDS, 'seconds')
+    ttl: TimeAdd(Now(), ttlSeconds || accessLifetime, 'seconds')
   })
 }
 
@@ -67,10 +76,10 @@ export function CreateRefreshToken(accountRef, lifetimeSeconds, reclaimtimeSecon
       type: 'refresh',
       used: false,
       sessionId: CreateOrReuseId(),
-      validUntil: TimeAdd(Now(), lifetimeSeconds || REFRESH_TOKEN_LIFETIME_SECONDS, 'seconds'),
+      validUntil: TimeAdd(Now(), lifetimeSeconds || refreshLifetime, 'seconds'),
       loggedOut: false
     },
-    ttl: TimeAdd(Now(), reclaimtimeSeconds || REFRESH_TOKEN_RECLAIMTIME_SECONDS, 'seconds')
+    ttl: TimeAdd(Now(), reclaimtimeSeconds || refreshReclaimTime, 'seconds')
   })
 }
 
@@ -173,7 +182,7 @@ export function InvalidateRefreshToken(refreshTokenRef, gracePeriodSeconds) {
   return Update(refreshTokenRef, {
     data: {
       used: true,
-      gracePeriodUntil: TimeAdd(Now(), gracePeriodSeconds || GRACE_PERIOD_SECONDS, 'seconds')
+      gracePeriodUntil: TimeAdd(Now(), gracePeriodSeconds || gracePeriod, 'seconds')
     }
   })
 }
