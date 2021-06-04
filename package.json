@@ -5,14 +5,14 @@
   "main": "index.js",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/fauna-brecht/skeleton-auth.git"
+    "url": "git+https://github.com/fauna-labs/fauna-auth-skeleton-backend.git"
   },
   "author": "Brecht De Rooms",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/fauna-brecht/skeleton-auth/issues"
+    "url": "https://github.com/fauna-labs/fauna-auth-skeleton-backend/issues"
   },
-  "homepage": "https://github.com/fauna-brecht/skeleton-auth#readme",
+  "homepage": "https://github.com/fauna-labs/fauna-auth-skeleton-backend#readme",
   "scripts": {
     "postinstall": "cd frontend && npm install && cd ../backend && npm install && cd ..",
     "start": "concurrently --handle-input \"npm run start_backend\" \"npm run start_frontend\"",
