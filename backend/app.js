@@ -29,7 +29,7 @@ app.use(
     saveUninitialized: false,
     secret: process.env.SESSION_SECRET,
     cookie: {
-      secure: false, // we should server from https in that case, which requires a certificate.
+      secure: process.env.SESSION_SECURE ? process.env.SESSION_SECURE === 'true' : true,
       httpOnly: true,
       expires: expiryDate
     }
