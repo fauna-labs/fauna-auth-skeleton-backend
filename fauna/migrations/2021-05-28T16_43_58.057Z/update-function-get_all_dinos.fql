@@ -1,0 +1,13 @@
+Update(Function("get_all_dinos"), {
+  "body": Query(Lambda([], If(And(HasCurrentIdentity(), Equals(Select(["data", "type"], Get(CurrentIdentity()), "normal"), "admin")), Map(Paginate(Documents(Collection("dinos"))), Lambda("x", Get(Var("x")))), If(HasCurrentIdentity(), Do(Call("rate_limit", ["get-dinos", CurrentIdentity(), Call("config_var", {
+    "path": ["rate_limiting", "get_dinos_private", "calls"]
+  }), Call("config_var", {
+    "path": ["rate_limiting", "get_dinos_private", "per_milliseconds"]
+  })]), Map(Paginate(Difference(Documents(Collection("dinos")), Match(Index("dinos_by_rarity"), "legendary"))), Lambda("x", Get(Var("x"))))), Do(Call("rate_limit", ["get-dinos", "public", Call("config_var", {
+    "path": ["rate_limiting", "get_dinos_public", "calls"]
+  }), Call("config_var", {
+    "path": ["rate_limiting", "get_dinos_public", "per_milliseconds"]
+  })]), Map(Paginate(Match(Index("dinos_by_rarity"), "common")), Lambda("x", Get(Var("x"))))))))),
+  "role": "server",
+  "data": null
+})

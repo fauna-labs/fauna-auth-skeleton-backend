@@ -66,7 +66,7 @@ class FaunaAPI {
       console.log('INFO - Retrieving dinos for logged in user with retry')
       return await this.callWithRefreshRetry(() => this.client.query(Call('get_all_dinos')))
     } else {
-      console.log('INFO - Retrieving public dinos')
+      console.log('INFO - Retrieving dinos')
       return await this.client.query(Call('get_all_dinos'))
     }
   }

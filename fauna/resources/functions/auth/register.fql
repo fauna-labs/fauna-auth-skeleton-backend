@@ -8,7 +8,13 @@ CreateFunction({
           logRegisters: Call('config_var', { path: ['logging', 'register'] })
         },
         Do(
-          Call('rate_limit', 'register', 'public', 100, 3600000),
+          Call(
+            'rate_limit',
+            'register',
+            'public',
+            Call('config_var', { path: ['rate_limiting', 'register', 'calls'] }),
+            Call('config_var', { path: ['rate_limiting', 'register', 'per_milliseconds'] })
+          ),
           Call('validate_email', Var('email')),
           Call('validate_password', Var('password')),
           Let(

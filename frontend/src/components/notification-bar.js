@@ -25,7 +25,7 @@ const NotificationBar = props => {
 
     event.preventDefault()
   }
-  if (!verified) {
+  if (loggedIn && !verified) {
     return (
       <div className="notification-bar">
         <span className="bold"> Logged in, not verified</span>, you can only see public dinos,

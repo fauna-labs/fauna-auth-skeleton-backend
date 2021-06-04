@@ -38,8 +38,20 @@ const GetAllCommonDinos = Map(
   Lambda(x => Get(x))
 )
 
-const IdentityBasedRateLimit = Call('rate_limit', 'get-dinos', CurrentIdentity(), 3, 60000)
-const PublicRateLimit = Call('rate_limit', 'get-dinos', 'public', 20, 60000)
+const IdentityBasedRateLimit = Call(
+  'rate_limit',
+  'get-dinos',
+  CurrentIdentity(),
+  Call('config_var', { path: ['rate_limiting', 'get_dinos_private', 'calls'] }),
+  Call('config_var', { path: ['rate_limiting', 'get_dinos_private', 'per_milliseconds'] })
+)
+const PublicRateLimit = Call(
+  'rate_limit',
+  'get-dinos',
+  'public',
+  Call('config_var', { path: ['rate_limiting', 'get_dinos_public', 'calls'] }),
+  Call('config_var', { path: ['rate_limiting', 'get_dinos_public', 'per_milliseconds'] })
+)
 
 export default CreateFunction({
   name: 'get_all_dinos',
